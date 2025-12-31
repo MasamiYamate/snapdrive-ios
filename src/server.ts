@@ -1283,6 +1283,8 @@ export async function createServer(
     'create_test_case',
     `Create a new test case with scenario steps and optionally capture baseline screenshots immediately.
 
+IMPORTANT: When creating test cases, you must ONLY create test scenarios. Do NOT modify any application source code or implementation files. Test cases should verify existing behavior, not change it.
+
 When creating navigation/transition tests:
 1. Navigate to the target screen
 2. Use 'smart_checkpoint' action to capture the destination screen - it automatically detects scrollable views and captures full content
