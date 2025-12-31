@@ -39,13 +39,31 @@ pip install fb-idb
 }
 ```
 
-### 環境変数（オプション）
+環境変数を設定する場合:
+
+```json
+{
+  "mcpServers": {
+    "snapdrive": {
+      "command": "npx",
+      "args": ["snapdrive-mcp"],
+      "env": {
+        "SNAPDRIVE_BASELINES_DIR": "/path/to/your/project/.snapdrive/baselines",
+        "SNAPDRIVE_RESULTS_DIR": "/path/to/your/project/results",
+        "SNAPDRIVE_LOG_LEVEL": "debug"
+      }
+    }
+  }
+}
+```
+
+### 環境変数
 
 | 変数 | 説明 | デフォルト |
 |------|------|-----------|
 | `SNAPDRIVE_BASELINES_DIR` | baseline画像の保存先 | `./baselines` |
 | `SNAPDRIVE_RESULTS_DIR` | 結果出力先 | `./results` |
-| `SNAPDRIVE_LOG_LEVEL` | ログレベル | `info` |
+| `SNAPDRIVE_LOG_LEVEL` | ログレベル (debug/info/warn/error) | `info` |
 
 ## ドキュメント
 
