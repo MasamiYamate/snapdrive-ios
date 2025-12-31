@@ -211,12 +211,14 @@ URLまたはディープリンクを開きます。
 
 ### create_test_case
 
-新規テストケースを作成します。
+新規テストケースを作成し、オプションでBaselineも同時に取得します。
 
 | パラメータ | 型 | 説明 |
 |-----------|-----|------|
-| `id` | string | テストケースID（ディレクトリ名） |
-| `name` | string | テストケース名 |
+| `name` | string | テストケースID（ディレクトリ名） |
+| `displayName` | string? | 表示名 |
 | `description` | string? | 説明 |
 | `steps` | array? | シナリオステップ |
+| `createBaselines` | boolean? | シナリオ実行してBaselineを取得 (default: false) |
+| `deviceUdid` | string? | 対象シミュレーターUDID |
 | `snapdriveDir` | string? | .snapdriveディレクトリのパス |

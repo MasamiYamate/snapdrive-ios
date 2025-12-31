@@ -1275,15 +1275,17 @@ export async function createServer(
 
   server.tool(
     'create_test_case',
-    'Create a new test case with scenario steps. Claude can explore the app first, then save the discovered steps as a reusable test case.',
+    'Create a new test case with scenario steps and optionally capture baseline screenshots immediately. Claude can explore the app first, then save the discovered steps as a reusable test case.',
     {
       name: z.string().describe('Test case name/ID (used as directory name, e.g., "login-flow")'),
       displayName: z.string().optional().describe('Human-readable name (e.g., "ログインフロー")'),
       description: z.string().optional().describe('Description of what this test case does'),
       steps: z.array(stepSchema).optional().describe('Array of scenario steps. If not provided, creates a template.'),
+      createBaselines: z.boolean().optional().default(false).describe('Run the test case immediately to capture baseline screenshots'),
+      deviceUdid: z.string().optional().describe('Target simulator UDID (required if createBaselines is true)'),
       snapdriveDir: z.string().optional().describe('Path to .snapdrive directory'),
     },
-    async ({ name, displayName, description, steps, snapdriveDir }) => {
+    async ({ name, displayName, description, steps, createBaselines = false, deviceUdid, snapdriveDir }) => {
       try {
         const { writeFile } = await import('node:fs/promises');
         const { stringify } = await import('yaml');
@@ -1312,9 +1314,23 @@ export async function createServer(
 
         await writeFile(scenarioPath, stringify(scenario), 'utf-8');
 
-        const message = steps
-          ? `Test case created with ${steps.length} steps. Run with updateBaselines=true to capture baseline screenshots.`
-          : 'Template created. Edit scenario.yaml or use create_test_case with steps parameter.';
+        // Optionally run immediately to create baselines
+        let runResult = null;
+        if (createBaselines && steps) {
+          const testCase = await scenarioRunner.loadTestCase(testCasePath);
+          runResult = await scenarioRunner.runTestCase(testCase, {
+            deviceUdid,
+            updateBaselines: true,
+            resultsDir: context.resultsDir,
+            testCasePath,
+          });
+        }
+
+        const message = createBaselines && runResult
+          ? `Test case created and baselines captured. ${runResult.checkpoints.length} checkpoint(s) saved.`
+          : steps
+            ? `Test case created with ${steps.length} steps. Use createBaselines=true or run separately to capture screenshots.`
+            : 'Template created. Edit scenario.yaml or use create_test_case with steps parameter.';
 
         return {
           content: [
@@ -1327,6 +1343,8 @@ export async function createServer(
                   scenarioPath,
                   baselinesDir,
                   stepsCount: scenarioSteps.length,
+                  baselinesCreated: createBaselines && runResult ? true : false,
+                  checkpointsCaptured: runResult?.checkpoints.length ?? 0,
                   message,
                 },
                 null,

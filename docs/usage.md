@@ -4,15 +4,28 @@
 
 SnapDriveでのテストは以下の流れで行います:
 
-1. **テストシナリオを作成** - Claudeに自然言語で指示してシナリオを構築
-2. **Baselineを保存** - 正しい状態のスクリーンショットをリポジトリに含める
+1. **テストシナリオを作成** - Claudeに自然言語で指示、Baselineも同時に取得
+2. **リポジトリにコミット** - シナリオとBaselineをチームで共有
 3. **差分検証** - 以後の実行でBaselineとの差分を検出
-
-Baselineをリポジトリに含めることで、チーム全体で同じ基準でUIの変更を検証できます。
 
 ## Step 1: テストシナリオの作成
 
-Claudeに自然言語でテストしたい内容を伝えます:
+Claudeに自然言語でテストしたい内容を伝えるだけで、シナリオ作成からBaseline取得まで自動で行います。
+
+### シンプルな指示でOK
+
+```
+LoginViewControllerの画面をテストしたい。
+「login-screen」という名前でテストケースを作成して。
+```
+
+Claudeが自動で:
+1. アプリを起動して画面を探索
+2. 指定されたViewを見つけてシナリオを構築
+3. checkpointを設定してBaselineを取得
+4. `.snapdrive/test-cases/login-screen/`に保存
+
+### 詳細な指示も可能
 
 ```
 ログイン機能のテストケースを「login-flow」という名前で作成して。
@@ -21,27 +34,19 @@ Claudeに自然言語でテストしたい内容を伝えます:
 3. メールアドレスに "test@example.com" を入力
 4. パスワードに "password123" を入力
 5. 送信ボタンをタップ
-6. ホーム画面が表示されることを確認
+6. ホーム画面が表示されることを確認してスクリーンショットを撮る
 ```
 
-Claudeは画面を探索しながらシナリオを構築し、`.snapdrive/test-cases/login-flow/scenario.yaml`に保存します。
+## Step 2: リポジトリにコミット
 
-## Step 2: Baselineの作成
-
-シナリオ作成後、Baselineモードで実行して正しい状態のスクリーンショットを保存します:
-
-```
-login-flowテストケースを実行してbaselineを更新して
-```
-
-これにより各checkpointのスクリーンショットが`.snapdrive/test-cases/login-flow/baselines/`に保存されます。
-
-**重要**: このbaselineディレクトリをGitリポジトリにコミットしてください。
+作成されたテストケースとBaselineをGitにコミットします:
 
 ```bash
 git add .snapdrive/
 git commit -m "Add login-flow test case with baselines"
 ```
+
+Baselineをリポジトリに含めることで、チーム全体で同じ基準でUIを検証できます。
 
 ## Step 3: 差分検証
 
@@ -52,6 +57,14 @@ login-flowテストケースを実行して
 ```
 
 Baselineと現在の画面を比較し、差分があればHTMLレポートで確認できます。
+
+### Baselineの更新
+
+意図的なUI変更の場合は、Baselineを更新します:
+
+```
+login-flowテストケースを実行してbaselineを更新して
+```
 
 ## 基本操作
 
