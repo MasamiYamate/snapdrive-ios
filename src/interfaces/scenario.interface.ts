@@ -12,6 +12,7 @@ export type ScenarioAction =
   | 'wait_for_element'
   | 'scroll_to_element'
   | 'checkpoint'
+  | 'full_page_checkpoint'
   | 'open_url';
 
 export interface ScenarioStep {
@@ -43,6 +44,11 @@ export interface ScenarioStep {
   name?: string;
   compare?: boolean;
   tolerance?: number;
+  // full_page_checkpoint
+  scrollDirection?: 'up' | 'down';
+  maxScrolls?: number;
+  scrollAmount?: number; // pixels to scroll each time
+  stitchImages?: boolean; // true: stitch into one image, false: compare each segment
   // open_url
   url?: string;
 }

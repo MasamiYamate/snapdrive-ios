@@ -459,6 +459,166 @@ export class ScenarioRunner implements IScenarioRunner {
         };
       }
 
+      case 'full_page_checkpoint': {
+        if (!step.name) throw new Error('full_page_checkpoint requires name');
+
+        const scrollDirection = step.scrollDirection ?? 'down';
+        const maxScrolls = step.maxScrolls ?? 50; // Increased default
+        const stitchImages = step.stitchImages ?? true;
+        const tolerance = step.tolerance ?? 0;
+
+        // Capture screenshots while scrolling
+        const segmentPaths: string[] = [];
+        const centerX = 200;
+        const centerY = 400;
+        const scrollDistance = step.scrollAmount ?? 300;
+
+        // First, scroll to top if scrolling down
+        if (scrollDirection === 'down') {
+          // Scroll to top first (swipe down multiple times until no change)
+          let prevTopData = '';
+          for (let i = 0; i < 20; i++) {
+            await idbClient.swipe(centerX, centerY - scrollDistance / 2, centerX, centerY + scrollDistance / 2, {
+              deviceUdid: context.deviceUdid,
+            });
+            await this.wait(200);
+
+            // Check if we've reached the top
+            const tempPath = join(context.screenshotsDir, `${step.name}_temp_top.png`);
+            await simctlClient.screenshot(tempPath, context.deviceUdid);
+            const currentTopData = await this.deps.imageDiffer.toBase64(tempPath);
+            if (currentTopData === prevTopData) {
+              break; // Reached the top
+            }
+            prevTopData = currentTopData;
+          }
+          await this.wait(500);
+        }
+
+        // Capture initial screenshot
+        let prevScreenshotData = '';
+        let scrollCount = 0;
+        let sameScreenCount = 0; // Count consecutive same screens
+
+        while (scrollCount < maxScrolls) {
+          const segmentPath = join(context.screenshotsDir, `${step.name}_segment_${scrollCount}.png`);
+          await simctlClient.screenshot(segmentPath, context.deviceUdid);
+
+          // Check if we've reached the end (screenshot is same as previous)
+          const currentData = await this.deps.imageDiffer.toBase64(segmentPath);
+          if (currentData === prevScreenshotData) {
+            sameScreenCount++;
+            // If we get 2 consecutive same screenshots, we've hit the end
+            if (sameScreenCount >= 2) {
+              break;
+            }
+          } else {
+            sameScreenCount = 0;
+            segmentPaths.push(segmentPath);
+          }
+          prevScreenshotData = currentData;
+
+          scrollCount++;
+
+          // Scroll
+          let sX: number, sY: number, eX: number, eY: number;
+          if (scrollDirection === 'down') {
+            sX = eX = centerX;
+            sY = centerY + scrollDistance / 2;
+            eY = centerY - scrollDistance / 2;
+          } else {
+            sX = eX = centerX;
+            sY = centerY - scrollDistance / 2;
+            eY = centerY + scrollDistance / 2;
+          }
+
+          await idbClient.swipe(sX, sY, eX, eY, { deviceUdid: context.deviceUdid });
+          await this.wait(300);
+        }
+
+        this.deps.logger.info(`Captured ${segmentPaths.length} scroll segments for ${step.name}`);
+
+        const actualPath = join(context.screenshotsDir, `${step.name}.png`);
+        const baselinePath = join(context.baselinesDir, `${step.name}.png`);
+        const diffPath = join(context.diffsDir, `${step.name}_diff.png`);
+
+        if (stitchImages && segmentPaths.length > 0) {
+          // Stitch all segments into one image
+          await imageDiffer.stitchVertically(segmentPaths, actualPath);
+
+          if (context.updateBaselines) {
+            await imageDiffer.updateBaseline(actualPath, baselinePath);
+            return {
+              name: step.name,
+              match: true,
+              differencePercent: 0,
+              baselinePath,
+              actualPath,
+            };
+          }
+
+          if (!existsSync(baselinePath)) {
+            return {
+              name: step.name,
+              match: false,
+              differencePercent: 100,
+              baselinePath,
+              actualPath,
+            };
+          }
+
+          const compareResult = await imageDiffer.compare(actualPath, baselinePath, {
+            tolerance,
+            generateDiff: true,
+            diffOutputPath: diffPath,
+          });
+
+          return {
+            name: step.name,
+            match: compareResult.match,
+            differencePercent: compareResult.differenceRatio * 100,
+            baselinePath,
+            actualPath,
+            diffPath: compareResult.diffImagePath,
+          };
+        } else {
+          // Compare each segment separately
+          let totalDiffPercent = 0;
+          let allMatch = true;
+
+          for (let i = 0; i < segmentPaths.length; i++) {
+            const segmentActual = segmentPaths[i]!;
+            const segmentBaseline = join(context.baselinesDir, `${step.name}_segment_${i}.png`);
+            const segmentDiff = join(context.diffsDir, `${step.name}_segment_${i}_diff.png`);
+
+            if (context.updateBaselines) {
+              await imageDiffer.updateBaseline(segmentActual, segmentBaseline);
+            } else if (existsSync(segmentBaseline)) {
+              const result = await imageDiffer.compare(segmentActual, segmentBaseline, {
+                tolerance,
+                generateDiff: true,
+                diffOutputPath: segmentDiff,
+              });
+              if (!result.match) allMatch = false;
+              totalDiffPercent += result.differenceRatio * 100;
+            } else {
+              allMatch = false;
+              totalDiffPercent += 100;
+            }
+          }
+
+          const avgDiffPercent = segmentPaths.length > 0 ? totalDiffPercent / segmentPaths.length : 0;
+
+          return {
+            name: step.name,
+            match: context.updateBaselines ? true : allMatch,
+            differencePercent: avgDiffPercent,
+            baselinePath: join(context.baselinesDir, `${step.name}_segment_0.png`),
+            actualPath: segmentPaths[0] ?? actualPath,
+          };
+        }
+      }
+
       case 'open_url': {
         if (!step.url) throw new Error('open_url requires url');
         await simctlClient.openUrl(step.url, context.deviceUdid);

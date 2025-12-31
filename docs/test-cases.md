@@ -71,7 +71,31 @@ steps:
 | `wait_for_element` | label, labelContains, type, timeoutMs | 要素出現待機 |
 | `scroll_to_element` | label, labelContains, direction, distance | 要素が見えるまでスクロール |
 | `checkpoint` | name, compare, tolerance | スクリーンショット比較 |
+| `full_page_checkpoint` | name, scrollDirection, maxScrolls, stitchImages | スクロール全体のスクリーンショット比較 |
 | `open_url` | url | URL/ディープリンクを開く |
+
+### full_page_checkpoint について
+
+スクロール可能な画面全体をキャプチャして比較します:
+
+```yaml
+- action: full_page_checkpoint
+  name: scrollable_list
+  scrollDirection: down    # up または down（デフォルト: down）
+  maxScrolls: 10           # 最大スクロール回数（デフォルト: 10）
+  stitchImages: true       # 画像を結合するか（デフォルト: true）
+  tolerance: 0.01          # 許容誤差
+```
+
+**動作:**
+1. 画面上部まで自動スクロール（変化がなくなるまで）
+2. スクリーンショットを撮影
+3. 少しスクロールして再撮影
+4. 画面が変わらなくなるまで繰り返し（自動終端検出）
+5. `stitchImages: true` の場合、全画像を縦に結合して1枚の長い画像として比較
+6. `stitchImages: false` の場合、各セグメントを個別に比較
+
+**終端検出:** 連続2回同じスクリーンショットが撮れた時点でスクロール終了と判定します。maxScrollsは安全上限（デフォルト50）です。
 
 ## テストケースの作成
 
