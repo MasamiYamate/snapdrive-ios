@@ -222,3 +222,8 @@ URLまたはディープリンクを開きます。
 | `createBaselines` | boolean? | シナリオ実行してBaselineを取得 (default: false) |
 | `deviceUdid` | string? | 対象シミュレーターUDID |
 | `snapdriveDir` | string? | .snapdriveディレクトリのパス |
+
+**checkpointアクションの種類:**
+- `checkpoint`: 現在の画面のみキャプチャ
+- `full_page_checkpoint`: スクロールして全体をキャプチャ
+- `smart_checkpoint`: **推奨** - スクロールViewを自動検出して適切な方法を選択

@@ -27,8 +27,10 @@ Claudeに自然言語でテストしたい内容を伝えるだけで、シナ�
 Claudeが自動で:
 1. アプリを起動して現在の画面を確認
 2. 指定された操作を実行しながらシナリオを構築
-3. 遷移先の画面でcheckpointを設定してBaselineを取得
-4. `.snapdrive/test-cases/`に保存
+3. 遷移先の画面で`smart_checkpoint`を設定
+   - スクロールViewがあれば全体をキャプチャ
+   - なければ通常のスクリーンショット
+4. Baselineを取得して`.snapdrive/test-cases/`に保存
 
 ### フロー全体のテスト
 

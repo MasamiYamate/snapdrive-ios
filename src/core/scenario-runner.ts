@@ -619,6 +619,37 @@ export class ScenarioRunner implements IScenarioRunner {
         }
       }
 
+      case 'smart_checkpoint': {
+        if (!step.name) throw new Error('smart_checkpoint requires name');
+
+        // Detect if screen has scrollable views
+        const uiTree = await idbClient.describeAll(context.deviceUdid);
+        const hasScrollable = elementFinder.hasScrollableView(uiTree.elements);
+
+        this.deps.logger.info(
+          `smart_checkpoint: ${step.name} - scrollable view ${hasScrollable ? 'detected' : 'not found'}`
+        );
+
+        if (hasScrollable) {
+          // Use full_page_checkpoint logic
+          const scrollStep = {
+            ...step,
+            action: 'full_page_checkpoint' as const,
+            scrollDirection: step.scrollDirection ?? 'down',
+            maxScrolls: step.maxScrolls ?? 50,
+            stitchImages: step.stitchImages ?? true,
+          };
+          return this.executeStep(scrollStep, context);
+        } else {
+          // Use regular checkpoint logic
+          const checkpointStep = {
+            ...step,
+            action: 'checkpoint' as const,
+          };
+          return this.executeStep(checkpointStep, context);
+        }
+      }
+
       case 'open_url': {
         if (!step.url) throw new Error('open_url requires url');
         await simctlClient.openUrl(step.url, context.deviceUdid);

@@ -1248,7 +1248,8 @@ export async function createServer(
   const stepSchema = z.object({
     action: z.enum([
       'launch_app', 'terminate_app', 'tap', 'swipe', 'type_text',
-      'wait', 'wait_for_element', 'scroll_to_element', 'checkpoint', 'open_url'
+      'wait', 'wait_for_element', 'scroll_to_element',
+      'checkpoint', 'full_page_checkpoint', 'smart_checkpoint', 'open_url'
     ]),
     bundleId: z.string().optional(),
     label: z.string().optional(),
@@ -1270,12 +1271,26 @@ export async function createServer(
     name: z.string().optional(),
     compare: z.boolean().optional(),
     tolerance: z.number().optional(),
+    // full_page_checkpoint / smart_checkpoint options
+    scrollDirection: z.enum(['up', 'down']).optional(),
+    maxScrolls: z.number().optional(),
+    scrollAmount: z.number().optional(),
+    stitchImages: z.boolean().optional(),
     url: z.string().optional(),
   });
 
   server.tool(
     'create_test_case',
-    'Create a new test case with scenario steps and optionally capture baseline screenshots immediately. Claude can explore the app first, then save the discovered steps as a reusable test case.',
+    `Create a new test case with scenario steps and optionally capture baseline screenshots immediately.
+
+When creating navigation/transition tests:
+1. Navigate to the target screen
+2. Use 'smart_checkpoint' action to capture the destination screen - it automatically detects scrollable views and captures full content
+
+Available checkpoint actions:
+- checkpoint: Captures current screen only
+- full_page_checkpoint: Always scrolls and captures entire scrollable content
+- smart_checkpoint: Auto-detects scrollable views, uses full_page if scrollable, otherwise regular checkpoint (RECOMMENDED for navigation tests)`,
     {
       name: z.string().describe('Test case name/ID (used as directory name, e.g., "login-flow")'),
       displayName: z.string().optional().describe('Human-readable name (e.g., "ログインフロー")'),

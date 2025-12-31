@@ -13,6 +13,7 @@ export type ScenarioAction =
   | 'scroll_to_element'
   | 'checkpoint'
   | 'full_page_checkpoint'
+  | 'smart_checkpoint'
   | 'open_url';
 
 export interface ScenarioStep {

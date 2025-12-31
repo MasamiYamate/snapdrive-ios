@@ -72,7 +72,26 @@ steps:
 | `scroll_to_element` | label, labelContains, direction, distance | 要素が見えるまでスクロール |
 | `checkpoint` | name, compare, tolerance | スクリーンショット比較 |
 | `full_page_checkpoint` | name, scrollDirection, maxScrolls, stitchImages | スクロール全体のスクリーンショット比較 |
+| `smart_checkpoint` | name, tolerance | **自動判定**（スクロールViewがあればfull_page、なければcheckpoint） |
 | `open_url` | url | URL/ディープリンクを開く |
+
+### smart_checkpoint について（推奨）
+
+画面にスクロール可能なView（UIScrollView, UITableView, UICollectionViewなど）が含まれているかを自動検出し、適切な方法でキャプチャします:
+
+```yaml
+- action: smart_checkpoint
+  name: settings_screen
+  tolerance: 0.01
+```
+
+**動作:**
+1. 画面のUI要素を解析
+2. スクロールViewを検出
+3. 検出された場合 → `full_page_checkpoint`でスクロール全体をキャプチャ
+4. 検出されない場合 → 通常の`checkpoint`で現在の画面をキャプチャ
+
+**遷移テストに最適:** 遷移先の画面内容を自動的に適切な方法で検証できます。
 
 ### full_page_checkpoint について
 

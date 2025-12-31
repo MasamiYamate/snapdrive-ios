@@ -25,6 +25,8 @@ export interface IElementFinder {
   ): ElementSearchResult;
   getCenterPoint(element: AccessibilityElement): Point;
   getAllLabels(elements: AccessibilityElement[]): string[];
+  hasScrollableView(elements: AccessibilityElement[]): boolean;
+  findScrollableViews(elements: AccessibilityElement[]): AccessibilityElement[];
 }
 
 export class ElementFinder implements IElementFinder {
@@ -221,6 +223,57 @@ export class ElementFinder implements IElementFinder {
     const dx = center.x - screenCenter.x;
     const dy = center.y - screenCenter.y;
     return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /**
+   * Check if any element in the list is a scrollable view
+   */
+  hasScrollableView(elements: AccessibilityElement[]): boolean {
+    return this.findScrollableViews(elements).length > 0;
+  }
+
+  /**
+   * Find all scrollable view elements
+   * Detects: UIScrollView, UITableView, UICollectionView, and similar
+   */
+  findScrollableViews(elements: AccessibilityElement[]): AccessibilityElement[] {
+    const scrollableTypes = [
+      'scrollview',
+      'tableview',
+      'collectionview',
+      'uiscrollview',
+      'uitableview',
+      'uicollectionview',
+      'list',
+      'scroll',
+    ];
+
+    const scrollableTraits = [
+      'scrollable',
+    ];
+
+    return elements.filter((el) => {
+      const type = el.type?.toLowerCase() ?? '';
+      const role = el.role?.toLowerCase() ?? '';
+      const traits = el.traits?.map(t => t.toLowerCase()) ?? [];
+
+      // Check type
+      if (scrollableTypes.some(t => type.includes(t))) {
+        return true;
+      }
+
+      // Check role
+      if (scrollableTypes.some(t => role.includes(t))) {
+        return true;
+      }
+
+      // Check traits
+      if (traits.some(t => scrollableTraits.some(st => t.includes(st)))) {
+        return true;
+      }
+
+      return false;
+    });
   }
 }
 
