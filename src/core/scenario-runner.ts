@@ -485,11 +485,12 @@ export class ScenarioRunner implements IScenarioRunner {
 
         // First, scroll to top if scrolling down
         if (scrollDirection === 'down') {
-          // Scroll to top first (swipe down multiple times until no change)
+          // Scroll to top first (drag down multiple times until no change)
           let prevTopData = '';
           for (let i = 0; i < 20; i++) {
             await idbClient.swipe(centerX, centerY - scrollDistance / 2, centerX, centerY + scrollDistance / 2, {
               deviceUdid: context.deviceUdid,
+              duration: 0.3, // Use drag instead of fast swipe
             });
             await this.wait(200);
 
@@ -542,7 +543,10 @@ export class ScenarioRunner implements IScenarioRunner {
             eY = centerY + scrollDistance / 2;
           }
 
-          await idbClient.swipe(sX, sY, eX, eY, { deviceUdid: context.deviceUdid });
+          await idbClient.swipe(sX, sY, eX, eY, {
+            deviceUdid: context.deviceUdid,
+            duration: 0.3, // Use drag instead of fast swipe
+          });
           await this.wait(300);
         }
 
@@ -658,10 +662,11 @@ export class ScenarioRunner implements IScenarioRunner {
         await simctlClient.screenshot(tempBeforePath, context.deviceUdid);
         const beforeData = await imageDiffer.toBase64(tempBeforePath);
 
-        // Try to scroll down using detected scroll region
+        // Try to scroll down using detected scroll region (use slow drag, not fast swipe)
         const scrollDistance = 100;
         await idbClient.swipe(centerX, centerY + scrollDistance / 2, centerX, centerY - scrollDistance / 2, {
           deviceUdid: context.deviceUdid,
+          duration: 0.5, // Slow drag to ensure scroll is triggered
         });
         await this.wait(300);
 
