@@ -650,40 +650,31 @@ export class ScenarioRunner implements IScenarioRunner {
           `smart_checkpoint: ${step.name} - scroll region at (${centerX}, ${centerY})`
         );
 
-        // First, try to detect scrollable views from accessibility tree
-        let hasScrollable = elementFinder.hasScrollableView(uiTree.elements);
+        // Detect scrollable content by screenshot comparison
+        this.deps.logger.info(`smart_checkpoint: ${step.name} - checking scroll by screenshot diff`);
 
-        // If not found in accessibility tree, try scroll detection
-        if (!hasScrollable) {
-          this.deps.logger.info(`smart_checkpoint: ${step.name} - checking scroll by screenshot diff`);
+        // Take a screenshot before scroll
+        const tempBeforePath = join(context.screenshotsDir, `${step.name}_scroll_detect_before.png`);
+        await simctlClient.screenshot(tempBeforePath, context.deviceUdid);
+        const beforeData = await imageDiffer.toBase64(tempBeforePath);
 
-          // Take a screenshot before scroll
-          const tempBeforePath = join(context.screenshotsDir, `${step.name}_scroll_detect_before.png`);
-          await simctlClient.screenshot(tempBeforePath, context.deviceUdid);
-          const beforeData = await imageDiffer.toBase64(tempBeforePath);
+        // Try to scroll down using detected scroll region
+        const scrollDistance = 100;
+        await idbClient.swipe(centerX, centerY + scrollDistance / 2, centerX, centerY - scrollDistance / 2, {
+          deviceUdid: context.deviceUdid,
+        });
+        await this.wait(300);
 
-          // Try to scroll down using detected scroll region
-          const scrollDistance = 100;
-          await idbClient.swipe(centerX, centerY + scrollDistance / 2, centerX, centerY - scrollDistance / 2, {
-            deviceUdid: context.deviceUdid,
-          });
-          await this.wait(300);
+        // Take a screenshot after scroll
+        const tempAfterPath = join(context.screenshotsDir, `${step.name}_scroll_detect_after.png`);
+        await simctlClient.screenshot(tempAfterPath, context.deviceUdid);
+        const afterData = await imageDiffer.toBase64(tempAfterPath);
 
-          // Take a screenshot after scroll
-          const tempAfterPath = join(context.screenshotsDir, `${step.name}_scroll_detect_after.png`);
-          await simctlClient.screenshot(tempAfterPath, context.deviceUdid);
-          const afterData = await imageDiffer.toBase64(tempAfterPath);
-
-          // If screenshots differ, content is scrollable
-          hasScrollable = beforeData !== afterData;
-
-          if (hasScrollable) {
-            this.deps.logger.info(`smart_checkpoint: ${step.name} - scrollable content detected via scroll test`);
-          }
-        }
+        // If screenshots differ, content is scrollable
+        const hasScrollable = beforeData !== afterData;
 
         this.deps.logger.info(
-          `smart_checkpoint: ${step.name} - scrollable view ${hasScrollable ? 'detected' : 'not found'}`
+          `smart_checkpoint: ${step.name} - scrollable content ${hasScrollable ? 'detected' : 'not found'}`
         );
 
         if (hasScrollable) {
