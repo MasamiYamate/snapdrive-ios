@@ -127,7 +127,12 @@ export async function createServer(
 
   server.tool(
     'describe_ui',
-    'Get the accessibility tree of all visible UI elements on screen',
+    `Get the accessibility tree of all visible UI elements on screen.
+
+Use this to find tap coordinates for elements:
+- Each element has a 'frame' property with x, y, width, height
+- Calculate tap point: x + width/2, y + height/2 (center of element)
+- Use these coordinates with the tap tool`,
     {
       deviceUdid: z.string().optional().describe('Target simulator UDID'),
     },
@@ -232,12 +237,19 @@ export async function createServer(
 
   server.tool(
     'tap',
-    'Tap on the iOS Simulator screen at coordinates or by finding an element by label',
+    `Tap on the iOS Simulator screen. ALWAYS use coordinates (x, y) for tapping.
+
+IMPORTANT: Use coordinates obtained from screenshot or describe_ui, NOT accessibility labels.
+- First take a screenshot to see the current screen
+- Use describe_ui to get element coordinates
+- Tap using x/y coordinates from the element's frame
+
+Do NOT use label/labelContains parameters for test case creation - they require accessibility labels which may not be present.`,
     {
-      x: z.number().optional().describe('X coordinate to tap'),
-      y: z.number().optional().describe('Y coordinate to tap'),
-      label: z.string().optional().describe('Label of element to tap (alternative to coordinates)'),
-      labelContains: z.string().optional().describe('Partial label match'),
+      x: z.number().optional().describe('X coordinate to tap (REQUIRED for test cases)'),
+      y: z.number().optional().describe('Y coordinate to tap (REQUIRED for test cases)'),
+      label: z.string().optional().describe('Label of element to tap (NOT recommended - use coordinates instead)'),
+      labelContains: z.string().optional().describe('Partial label match (NOT recommended - use coordinates instead)'),
       duration: z.number().optional().describe('Tap duration in seconds (for long press)'),
       deviceUdid: z.string().optional().describe('Target simulator UDID'),
     },
@@ -1283,16 +1295,22 @@ export async function createServer(
     'create_test_case',
     `Create a new test case with scenario steps and optionally capture baseline screenshots immediately.
 
-IMPORTANT: When creating test cases, you must ONLY create test scenarios. Do NOT modify any application source code or implementation files. Test cases should verify existing behavior, not change it.
+CRITICAL RULES:
+1. Do NOT modify any application source code or implementation files
+2. Do NOT add accessibility labels to the app
+3. ALWAYS use coordinates (x, y) for tap actions, NOT labels
+4. Get coordinates from describe_ui tool or screenshot analysis
 
-When creating navigation/transition tests:
-1. Navigate to the target screen
-2. Use 'smart_checkpoint' action to capture the destination screen - it automatically detects scrollable views and captures full content
+Workflow for creating test cases:
+1. Take a screenshot to see the current screen
+2. Use describe_ui to get element coordinates from their frame property
+3. Create tap steps using x/y coordinates (e.g., tap at x:200 y:300)
+4. Use smart_checkpoint to capture destination screens
 
 Available checkpoint actions:
 - checkpoint: Captures current screen only
 - full_page_checkpoint: Always scrolls and captures entire scrollable content
-- smart_checkpoint: Auto-detects scrollable views, uses full_page if scrollable, otherwise regular checkpoint (RECOMMENDED for navigation tests)`,
+- smart_checkpoint: Auto-detects scrollable content (RECOMMENDED)`,
     {
       name: z.string().describe('Test case name/ID (used as directory name, e.g., "login-flow")'),
       displayName: z.string().optional().describe('Human-readable name (e.g., "ログインフロー")'),
