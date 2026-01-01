@@ -7,8 +7,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { join } from 'node:path';
-import { mkdir, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 
 import { IDBClient, type IIDBClient } from './core/idb-client.js';
 import { SimctlClient, type ISimctlClient } from './core/simctl-client.js';
@@ -18,7 +17,49 @@ import { ScenarioRunner, type IScenarioRunner } from './core/scenario-runner.js'
 import { ReportGenerator, type IReportGenerator } from './core/report-generator.js';
 import { Logger, type ILogger } from './utils/logger.js';
 import { DEFAULT_CONFIG, type ServerConfig } from './interfaces/config.interface.js';
-import type { TestRunResult } from './interfaces/scenario.interface.js';
+import type { TestRunResult, Waypoint } from './interfaces/scenario.interface.js';
+
+/**
+ * Normalize coordinate to 6 decimal places (10cm precision)
+ * This ensures consistent coordinates for reproducible tests
+ */
+function normalizeCoordinate(value: number): number {
+  return Math.round(value * 1_000_000) / 1_000_000;
+}
+
+/**
+ * Normalize waypoint coordinates to 6 decimal places
+ */
+function normalizeWaypoint(wp: Waypoint): Waypoint {
+  return {
+    latitude: normalizeCoordinate(wp.latitude),
+    longitude: normalizeCoordinate(wp.longitude),
+  };
+}
+
+/**
+ * Normalize all coordinates in scenario steps for reproducibility
+ */
+function normalizeStepCoordinates(steps: Record<string, unknown>[]): Record<string, unknown>[] {
+  return steps.map(step => {
+    const normalized = { ...step };
+
+    // Normalize set_location coordinates
+    if (typeof normalized.latitude === 'number') {
+      normalized.latitude = normalizeCoordinate(normalized.latitude);
+    }
+    if (typeof normalized.longitude === 'number') {
+      normalized.longitude = normalizeCoordinate(normalized.longitude);
+    }
+
+    // Normalize waypoints array
+    if (Array.isArray(normalized.waypoints)) {
+      normalized.waypoints = (normalized.waypoints as Waypoint[]).map(normalizeWaypoint);
+    }
+
+    return normalized;
+  });
+}
 
 export interface ServerContext {
   idbClient: IIDBClient;
@@ -66,15 +107,9 @@ export function createServerContext(config: Partial<ServerConfig> = {}): ServerC
 export async function createServer(
   context: ServerContext = createServerContext()
 ): Promise<McpServer> {
-  const { idbClient, simctlClient, elementFinder, imageDiffer, scenarioRunner, reportGenerator, logger, config } = context;
+  const { idbClient, simctlClient, imageDiffer, scenarioRunner, reportGenerator, logger } = context;
 
-  // Clean up previous results
-  if (existsSync(config.resultsDir)) {
-    logger.info(`Cleaning up previous results in: ${config.resultsDir}`);
-    await rm(config.resultsDir, { recursive: true, force: true });
-  }
-
-  // Ensure results directory exists
+  // Ensure results directory exists (do not clean up previous results)
   await mkdir(context.resultsDir, { recursive: true });
   await mkdir(join(context.resultsDir, 'screenshots'), { recursive: true });
   await mkdir(join(context.resultsDir, 'diffs'), { recursive: true });
@@ -90,7 +125,9 @@ export async function createServer(
 
   server.tool(
     'screenshot',
-    'Capture a screenshot of the iOS Simulator and return as base64 image',
+    `Capture a screenshot of the iOS Simulator via idb (iOS Development Bridge).
+
+IMPORTANT: Always use this tool for iOS Simulator screenshots. Do NOT use xcrun simctl, cliclick, osascript, or other CLI commands directly. This tool uses idb internally for reliable automation.`,
     {
       name: z.string().optional().describe('Optional name for the screenshot'),
       deviceUdid: z.string().optional().describe('Target simulator UDID'),
@@ -127,12 +164,14 @@ export async function createServer(
 
   server.tool(
     'describe_ui',
-    `Get the accessibility tree of all visible UI elements on screen.
+    `Get the accessibility tree of the iOS Simulator screen via idb (iOS Development Bridge).
 
-Use this to find tap coordinates for elements:
-- Each element has a 'frame' property with x, y, width, height
-- Calculate tap point: x + width/2, y + height/2 (center of element)
-- Use these coordinates with the tap tool`,
+IMPORTANT: Always use this tool to get UI element information. Do NOT use osascript, AppleScript, or other methods. This tool uses idb internally for reliable automation.
+
+Use screenshot tool to visually identify elements, then use this for precise coordinates:
+- Each element has 'frame' with x, y, width, height
+- Tap point = frame center: x + width/2, y + height/2
+- Note: Not all visual elements have accessibility entries`,
     {
       deviceUdid: z.string().optional().describe('Target simulator UDID'),
     },
@@ -170,7 +209,9 @@ Use this to find tap coordinates for elements:
 
   server.tool(
     'tap',
-    `Tap on the iOS Simulator screen at specific coordinates.
+    `Tap on the iOS Simulator screen at specific coordinates via idb (iOS Development Bridge).
+
+IMPORTANT: Always use this tool for tapping on iOS Simulator. Do NOT use cliclick, osascript, or other CLI tools. This tool uses idb internally for reliable automation.
 
 Usage:
 1. Use describe_ui to get element coordinates from frame property
@@ -205,75 +246,21 @@ Usage:
 
   server.tool(
     'swipe',
-    'Perform a swipe gesture on the iOS Simulator',
+    `Swipe from one point to another on the iOS Simulator via idb (iOS Development Bridge).
+
+IMPORTANT: Always use this tool for swiping on iOS Simulator. Do NOT use cliclick, osascript, or other CLI tools. This tool uses idb internally for reliable automation.
+
+Get coordinates from describe_ui frame property for precise swiping.`,
     {
-      startX: z.number().optional().describe('Starting X coordinate'),
-      startY: z.number().optional().describe('Starting Y coordinate'),
-      endX: z.number().optional().describe('Ending X coordinate'),
-      endY: z.number().optional().describe('Ending Y coordinate'),
-      direction: z
-        .enum(['up', 'down', 'left', 'right'])
-        .optional()
-        .describe('Swipe direction (alternative to explicit coordinates)'),
-      distance: z.number().optional().default(300).describe('Swipe distance in points'),
+      startX: z.number().describe('Starting X coordinate'),
+      startY: z.number().describe('Starting Y coordinate'),
+      endX: z.number().describe('Ending X coordinate'),
+      endY: z.number().describe('Ending Y coordinate'),
       deviceUdid: z.string().optional().describe('Target simulator UDID'),
     },
-    async ({ startX, startY, endX, endY, direction, distance = 300, deviceUdid }) => {
+    async ({ startX, startY, endX, endY, deviceUdid }) => {
       try {
-        let sX: number, sY: number, eX: number, eY: number;
-
-        if (direction) {
-          // Use screen center as starting point
-          const centerX = 200;
-          const centerY = 400;
-
-          switch (direction) {
-            case 'up':
-              sX = eX = centerX;
-              sY = centerY + distance / 2;
-              eY = centerY - distance / 2;
-              break;
-            case 'down':
-              sX = eX = centerX;
-              sY = centerY - distance / 2;
-              eY = centerY + distance / 2;
-              break;
-            case 'left':
-              sY = eY = centerY;
-              sX = centerX + distance / 2;
-              eX = centerX - distance / 2;
-              break;
-            case 'right':
-              sY = eY = centerY;
-              sX = centerX - distance / 2;
-              eX = centerX + distance / 2;
-              break;
-          }
-        } else if (
-          startX !== undefined &&
-          startY !== undefined &&
-          endX !== undefined &&
-          endY !== undefined
-        ) {
-          sX = startX;
-          sY = startY;
-          eX = endX;
-          eY = endY;
-        } else {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: JSON.stringify({
-                  success: false,
-                  error: 'Must provide either direction or start/end coordinates',
-                }),
-              },
-            ],
-          };
-        }
-
-        await idbClient.swipe(sX, sY, eX, eY, { deviceUdid });
+        await idbClient.swipe(startX, startY, endX, endY, { deviceUdid });
 
         return {
           content: [
@@ -281,8 +268,8 @@ Usage:
               type: 'text' as const,
               text: JSON.stringify({
                 success: true,
-                from: { x: sX, y: sY },
-                to: { x: eX, y: eY },
+                from: { x: startX, y: startY },
+                to: { x: endX, y: endY },
               }),
             },
           ],
@@ -298,7 +285,9 @@ Usage:
 
   server.tool(
     'type_text',
-    'Type text into the currently focused text field',
+    `Type text into the currently focused text field on iOS Simulator via idb (iOS Development Bridge).
+
+IMPORTANT: Always use this tool for typing text. Do NOT use osascript, cliclick, or other CLI tools. This tool uses idb internally for reliable automation.`,
     {
       text: z.string().describe('Text to type'),
       deviceUdid: z.string().optional().describe('Target simulator UDID'),
@@ -342,63 +331,6 @@ Usage:
     }
   );
 
-  server.tool(
-    'wait_for_element',
-    'Wait for a UI element to appear on screen',
-    {
-      label: z.string().optional().describe('Exact label match'),
-      labelContains: z.string().optional().describe('Partial label match'),
-      type: z.string().optional().describe('Element type'),
-      timeoutMs: z.number().optional().default(8000).describe('Maximum wait time in milliseconds'),
-      pollIntervalMs: z.number().optional().default(500).describe('Polling interval'),
-      deviceUdid: z.string().optional().describe('Target simulator UDID'),
-    },
-    async ({ label, labelContains, type, timeoutMs = 8000, pollIntervalMs = 500, deviceUdid }) => {
-      const startTime = Date.now();
-
-      while (Date.now() - startTime < timeoutMs) {
-        try {
-          const uiTree = await idbClient.describeAll(deviceUdid);
-          const result = elementFinder.findBest(uiTree.elements, { label, labelContains, type });
-
-          if (result.found) {
-            return {
-              content: [
-                {
-                  type: 'text' as const,
-                  text: JSON.stringify({
-                    success: true,
-                    found: true,
-                    element: result.element,
-                    tapCoordinates: result.tapCoordinates,
-                    elapsedMs: Date.now() - startTime,
-                  }),
-                },
-              ],
-            };
-          }
-        } catch {
-          // Continue polling
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
-      }
-
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              success: false,
-              found: false,
-              error: `Element not found within ${timeoutMs}ms`,
-              searchCriteria: { label, labelContains, type },
-            }),
-          },
-        ],
-      };
-    }
-  );
 
   // ===========================================
   // SIMULATOR MANAGEMENT TOOLS
@@ -696,6 +628,107 @@ Usage:
     }
   );
 
+  server.tool(
+    'set_location',
+    'Set the simulated GPS location of the iOS Simulator',
+    {
+      latitude: z.number().min(-90).max(90).describe('Latitude (-90 to 90)'),
+      longitude: z.number().min(-180).max(180).describe('Longitude (-180 to 180)'),
+      deviceUdid: z.string().optional().describe('Target simulator UDID'),
+    },
+    async ({ latitude, longitude, deviceUdid }) => {
+      try {
+        await simctlClient.setLocation(latitude, longitude, deviceUdid);
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                success: true,
+                latitude,
+                longitude,
+              }),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  server.tool(
+    'clear_location',
+    'Clear the simulated GPS location (revert to default)',
+    {
+      deviceUdid: z.string().optional().describe('Target simulator UDID'),
+    },
+    async ({ deviceUdid }) => {
+      try {
+        await simctlClient.clearLocation(deviceUdid);
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                success: true,
+                cleared: true,
+              }),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  const waypointSchema = z.object({
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+  });
+
+  server.tool(
+    'simulate_route',
+    `Simulate GPS movement along a route (for navigation testing).
+
+Provide an array of waypoints with latitude/longitude. The simulator will move through each point sequentially.`,
+    {
+      waypoints: z.array(waypointSchema).min(1).describe('Array of {latitude, longitude} waypoints'),
+      intervalMs: z.number().optional().default(3000).describe('Time between waypoints in milliseconds (default: 3000 for map rendering)'),
+      deviceUdid: z.string().optional().describe('Target simulator UDID'),
+    },
+    async ({ waypoints, intervalMs = 3000, deviceUdid }) => {
+      try {
+        await simctlClient.simulateRoute(waypoints, { intervalMs }, deviceUdid);
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                success: true,
+                waypointsCount: waypoints.length,
+                intervalMs,
+                completed: true,
+              }),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: 'text' as const, text: `Error: ${String(error)}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
   // ===========================================
   // TEST CASE MANAGEMENT TOOLS
   // ===========================================
@@ -938,12 +971,11 @@ Usage:
   const stepSchema = z.object({
     action: z.enum([
       'launch_app', 'terminate_app', 'tap', 'swipe', 'type_text',
-      'wait', 'wait_for_element', 'scroll_to_element',
-      'checkpoint', 'full_page_checkpoint', 'smart_checkpoint', 'open_url'
+      'wait', 'checkpoint', 'full_page_checkpoint', 'smart_checkpoint',
+      'scroll_to_top', 'scroll_to_bottom', 'open_url',
+      'set_location', 'clear_location', 'simulate_route'
     ]),
     bundleId: z.string().optional(),
-    label: z.string().optional(),
-    labelContains: z.string().optional(),
     x: z.number().optional(),
     y: z.number().optional(),
     duration: z.number().optional(),
@@ -954,19 +986,24 @@ Usage:
     endY: z.number().optional(),
     distance: z.number().optional(),
     text: z.string().optional(),
-    target: z.string().optional(),
     seconds: z.number().optional(),
-    type: z.string().optional(),
-    timeoutMs: z.number().optional(),
     name: z.string().optional(),
     compare: z.boolean().optional(),
     tolerance: z.number().optional(),
-    // full_page_checkpoint / smart_checkpoint options
-    scrollDirection: z.enum(['up', 'down']).optional(),
+    // full_page_checkpoint / smart_checkpoint / scroll_to_top / scroll_to_bottom options
     maxScrolls: z.number().optional(),
     scrollAmount: z.number().optional(),
     stitchImages: z.boolean().optional(),
     url: z.string().optional(),
+    // set_location
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    // simulate_route
+    waypoints: z.array(waypointSchema).optional(),
+    intervalMs: z.number().optional(),
+    captureAtWaypoints: z.boolean().optional(),
+    captureDelayMs: z.number().optional(),
+    waypointCheckpointName: z.string().optional(),
   });
 
   server.tool(
@@ -974,9 +1011,20 @@ Usage:
     `Create a new test case with scenario steps and capture baseline screenshots.
 
 Workflow:
-1. Use screenshot and describe_ui to understand current screen
-2. Use tap/swipe/type_text to navigate (get coordinates from describe_ui frame)
-3. Use smart_checkpoint at destination screens
+1. Use screenshot to see the screen, use describe_ui for precise coordinates
+2. Use tap/swipe/type_text to navigate
+3. Use smart_checkpoint for EVERY screen to verify
+
+CRITICAL - Scrollable Content:
+- ALWAYS use smart_checkpoint (NOT checkpoint) for screens
+- smart_checkpoint auto-detects scrollable content and captures full page
+- It scrolls through ALL content and stitches screenshots together
+- This ensures content below the fold is also verified
+
+Available checkpoint actions:
+- checkpoint: Single screenshot (use only for non-scrollable screens)
+- smart_checkpoint: Auto-detects scroll, captures full page if scrollable (RECOMMENDED)
+- full_page_checkpoint: Forces full page capture with scroll
 
 IMPORTANT: Do NOT modify app source code. Only create test scenarios.`,
     {
@@ -1003,11 +1051,14 @@ IMPORTANT: Do NOT modify app source code. Only create test scenarios.`,
         await mkdir(baselinesDir, { recursive: true });
 
         // Use provided steps or create template
-        const scenarioSteps = steps ?? [
+        const rawSteps = steps ?? [
           { action: 'launch_app', bundleId: 'com.example.app' },
           { action: 'wait', seconds: 1 },
           { action: 'checkpoint', name: 'initial_screen', compare: true },
         ];
+
+        // Normalize coordinates to 6 decimal places for reproducibility
+        const scenarioSteps = normalizeStepCoordinates(rawSteps as Record<string, unknown>[]);
 
         const scenario = {
           name: displayName ?? name,

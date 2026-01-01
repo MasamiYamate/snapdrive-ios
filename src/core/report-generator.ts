@@ -328,6 +328,92 @@ export class ReportGenerator implements IReportGenerator {
       font-size: 0.625rem;
       color: var(--color-text-muted);
     }
+    /* Route simulation checkpoint styles */
+    .route-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 4px;
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+    .waypoints-section {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-border);
+    }
+    .waypoints-section h5 {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .waypoints-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .waypoint-comparison {
+      background: #fffbeb;
+      border: 1px solid #fbbf24;
+      border-radius: 6px;
+      padding: 0.75rem;
+    }
+    .waypoint-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .waypoint-title {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #92400e;
+    }
+    .waypoint-status {
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .waypoint-status.pass { color: var(--color-pass); }
+    .waypoint-status.fail { color: var(--color-fail); }
+    .waypoint-images {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+    }
+    .waypoint-img-item {
+      flex: 1 1 0;
+      min-width: 100px;
+      max-width: 200px;
+      text-align: center;
+    }
+    .waypoint-img-item img {
+      width: 100%;
+      height: auto;
+      border: 2px solid var(--color-border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .waypoint-img-item img:hover {
+      transform: scale(1.02);
+      border-color: #f59e0b;
+    }
+    .waypoint-img-label {
+      margin-top: 0.25rem;
+      font-size: 0.625rem;
+      color: var(--color-text-muted);
+    }
+    .waypoint-img-placeholder {
+      padding: 2rem 0.5rem;
+      color: var(--color-text-muted);
+      background: #f1f5f9;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
   </style>
 </head>
 <body>
@@ -491,14 +577,70 @@ export class ReportGenerator implements IReportGenerator {
         </div>`;
     }
 
+    // Build waypoints section if this is a route simulation checkpoint
+    let waypointsHtml = '';
+    if (cp.isRouteSimulation && cp.waypointResults && cp.waypointResults.length > 0) {
+      const waypointItemsHtml: string[] = [];
+
+      for (const wp of cp.waypointResults) {
+        const [wpActualUri, wpBaselineUri, wpDiffUri] = await Promise.all([
+          this.imageToDataUri(wp.actualPath),
+          this.imageToDataUri(wp.baselinePath),
+          wp.diffPath ? this.imageToDataUri(wp.diffPath) : Promise.resolve(null),
+        ]);
+
+        const statusClass = wp.match ? 'pass' : 'fail';
+        const statusIcon = wp.match ? '✓' : '✗';
+        const diffText = `${wp.differencePercent.toFixed(1)}%`;
+
+        const buildWpImageHtml = (dataUri: string | null, label: string): string => {
+          if (!dataUri) {
+            return `<div class="waypoint-img-placeholder">${label === 'Baseline' ? 'No baseline' : 'No image'}</div>`;
+          }
+          return `<img src="${dataUri}" alt="${label}" onclick="openModal(this.src, '${this.escapeHtml(cp.name)} - Waypoint ${wp.index + 1} ${label}')">`;
+        };
+
+        waypointItemsHtml.push(`
+          <div class="waypoint-comparison">
+            <div class="waypoint-header">
+              <span class="waypoint-title">Waypoint ${wp.index + 1}</span>
+              <span class="waypoint-status ${statusClass}">${statusIcon} ${diffText}</span>
+            </div>
+            <div class="waypoint-images">
+              <div class="waypoint-img-item">
+                ${buildWpImageHtml(wpActualUri, 'Actual')}
+                <div class="waypoint-img-label">Actual</div>
+              </div>
+              <div class="waypoint-img-item">
+                ${buildWpImageHtml(wpBaselineUri, 'Baseline')}
+                <div class="waypoint-img-label">Baseline</div>
+              </div>
+              <div class="waypoint-img-item">
+                ${buildWpImageHtml(wpDiffUri, 'Diff')}
+                <div class="waypoint-img-label">Diff</div>
+              </div>
+            </div>
+          </div>`);
+      }
+
+      waypointsHtml = `
+        <div class="waypoints-section">
+          <h5>Route Waypoints (${cp.waypointResults.length})</h5>
+          <div class="waypoints-list">
+            ${waypointItemsHtml.join('')}
+          </div>
+        </div>`;
+    }
+
     const fullPageBadge = cp.isFullPage ? '<span class="full-page-badge">Full Page</span>' : '';
+    const routeBadge = cp.isRouteSimulation ? '<span class="route-badge">Route</span>' : '';
 
     return `
       <div class="checkpoint">
         <div class="checkpoint-header">
-          <strong>${this.escapeHtml(cp.name)}</strong> ${fullPageBadge}
+          <strong>${this.escapeHtml(cp.name)}</strong> ${fullPageBadge}${routeBadge}
           <span class="diff-percent ${cp.match ? 'pass' : 'fail'}">
-            ${cp.match ? '✓ Match (0%)' : `✗ ${cp.differencePercent.toFixed(2)}% different`}
+            ${cp.match ? `✓ Match (${cp.differencePercent.toFixed(2)}%)` : `✗ ${cp.differencePercent.toFixed(2)}% different`}
           </span>
         </div>
         <div class="screenshot-compare">
@@ -507,6 +649,7 @@ export class ReportGenerator implements IReportGenerator {
           ${buildImageHtml(diffDataUri, 'Diff', 'diff')}
         </div>
         ${segmentsHtml}
+        ${waypointsHtml}
       </div>`;
   }
 

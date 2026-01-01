@@ -5,8 +5,7 @@
  */
 
 import { join } from 'node:path';
-import { mkdir, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { IDBClient } from './core/idb-client.js';
 import { SimctlClient } from './core/simctl-client.js';
 import { ElementFinder } from './core/element-finder.js';
@@ -158,13 +157,7 @@ async function runTests(options: CliOptions): Promise<void> {
 
   const { scenarioRunner, reportGenerator } = await createRunner(options.verbose ?? false);
 
-  // Clean up previous results
-  if (existsSync(baseResultsDir)) {
-    console.log(`Cleaning up previous results in: ${baseResultsDir}`);
-    await rm(baseResultsDir, { recursive: true, force: true });
-  }
-
-  // Ensure results directory exists
+  // Ensure results directory exists (do not clean up previous results)
   await mkdir(resultsDir, { recursive: true });
   await mkdir(join(resultsDir, 'screenshots'), { recursive: true });
   await mkdir(join(resultsDir, 'diffs'), { recursive: true });
