@@ -86,6 +86,9 @@ export interface CheckpointResult {
   baselinePath: string;
   actualPath: string;
   diffPath?: string;
+  // For full_page_checkpoint / smart_checkpoint with scrollable views
+  isFullPage?: boolean;
+  segmentPaths?: string[];
 }
 
 export interface TestCaseResult {

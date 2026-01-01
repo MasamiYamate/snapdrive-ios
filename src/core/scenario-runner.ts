@@ -554,6 +554,8 @@ export class ScenarioRunner implements IScenarioRunner {
               differencePercent: 0,
               baselinePath,
               actualPath,
+              isFullPage: true,
+              segmentPaths,
             };
           }
 
@@ -564,6 +566,8 @@ export class ScenarioRunner implements IScenarioRunner {
               differencePercent: 100,
               baselinePath,
               actualPath,
+              isFullPage: true,
+              segmentPaths,
             };
           }
 
@@ -580,6 +584,8 @@ export class ScenarioRunner implements IScenarioRunner {
             baselinePath,
             actualPath,
             diffPath: compareResult.diffImagePath,
+            isFullPage: true,
+            segmentPaths,
           };
         } else {
           // Compare each segment separately
@@ -615,6 +621,8 @@ export class ScenarioRunner implements IScenarioRunner {
             differencePercent: avgDiffPercent,
             baselinePath: join(context.baselinesDir, `${step.name}_segment_0.png`),
             actualPath: segmentPaths[0] ?? actualPath,
+            isFullPage: true,
+            segmentPaths,
           };
         }
       }

@@ -280,6 +280,54 @@ export class ReportGenerator implements IReportGenerator {
       margin-top: 1rem;
       font-size: 0.875rem;
     }
+    /* Full page checkpoint styles */
+    .full-page-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      background: #dbeafe;
+      color: #1e40af;
+      border-radius: 4px;
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+    .scroll-segments {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-border);
+    }
+    .scroll-segments h5 {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .segments-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.75rem;
+    }
+    .segment-item {
+      text-align: center;
+    }
+    .segment-item img {
+      width: 100%;
+      height: auto;
+      border: 2px solid var(--color-border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .segment-item img:hover {
+      transform: scale(1.05);
+      border-color: #3b82f6;
+    }
+    .segment-label {
+      margin-top: 0.25rem;
+      font-size: 0.625rem;
+      color: var(--color-text-muted);
+    }
   </style>
 </head>
 <body>
@@ -416,10 +464,39 @@ export class ReportGenerator implements IReportGenerator {
         </div>`;
     };
 
+    // Build scroll segments section if this is a full-page checkpoint
+    let segmentsHtml = '';
+    if (cp.isFullPage && cp.segmentPaths && cp.segmentPaths.length > 1) {
+      const segmentDataUris = await Promise.all(
+        cp.segmentPaths.map(p => this.imageToDataUri(p))
+      );
+
+      const segmentItems = segmentDataUris
+        .map((dataUri, idx) => {
+          if (!dataUri) return '';
+          return `
+            <div class="segment-item">
+              <img src="${dataUri}" alt="Segment ${idx + 1}" onclick="openModal(this.src, '${this.escapeHtml(cp.name)} - Segment ${idx + 1}')">
+              <div class="segment-label">Segment ${idx + 1}</div>
+            </div>`;
+        })
+        .join('');
+
+      segmentsHtml = `
+        <div class="scroll-segments">
+          <h5>Scroll Segments (${cp.segmentPaths.length})</h5>
+          <div class="segments-grid">
+            ${segmentItems}
+          </div>
+        </div>`;
+    }
+
+    const fullPageBadge = cp.isFullPage ? '<span class="full-page-badge">Full Page</span>' : '';
+
     return `
       <div class="checkpoint">
         <div class="checkpoint-header">
-          <strong>${this.escapeHtml(cp.name)}</strong>
+          <strong>${this.escapeHtml(cp.name)}</strong> ${fullPageBadge}
           <span class="diff-percent ${cp.match ? 'pass' : 'fail'}">
             ${cp.match ? '✓ Match (0%)' : `✗ ${cp.differencePercent.toFixed(2)}% different`}
           </span>
@@ -429,6 +506,7 @@ export class ReportGenerator implements IReportGenerator {
           ${buildImageHtml(baselineDataUri, 'Baseline', 'baseline')}
           ${buildImageHtml(diffDataUri, 'Diff', 'diff')}
         </div>
+        ${segmentsHtml}
       </div>`;
   }
 
