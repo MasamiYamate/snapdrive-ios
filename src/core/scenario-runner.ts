@@ -630,9 +630,40 @@ export class ScenarioRunner implements IScenarioRunner {
       case 'smart_checkpoint': {
         if (!step.name) throw new Error('smart_checkpoint requires name');
 
-        // Detect if screen has scrollable views
+        // First, try to detect scrollable views from accessibility tree
         const uiTree = await idbClient.describeAll(context.deviceUdid);
-        const hasScrollable = elementFinder.hasScrollableView(uiTree.elements);
+        let hasScrollable = elementFinder.hasScrollableView(uiTree.elements);
+
+        // If not found in accessibility tree, try scroll detection
+        if (!hasScrollable) {
+          this.deps.logger.info(`smart_checkpoint: ${step.name} - checking scroll by screenshot diff`);
+
+          // Take a screenshot before scroll
+          const tempBeforePath = join(context.screenshotsDir, `${step.name}_scroll_detect_before.png`);
+          await simctlClient.screenshot(tempBeforePath, context.deviceUdid);
+          const beforeData = await imageDiffer.toBase64(tempBeforePath);
+
+          // Try to scroll down
+          const centerX = 200;
+          const centerY = 400;
+          const scrollDistance = 100;
+          await idbClient.swipe(centerX, centerY + scrollDistance / 2, centerX, centerY - scrollDistance / 2, {
+            deviceUdid: context.deviceUdid,
+          });
+          await this.wait(300);
+
+          // Take a screenshot after scroll
+          const tempAfterPath = join(context.screenshotsDir, `${step.name}_scroll_detect_after.png`);
+          await simctlClient.screenshot(tempAfterPath, context.deviceUdid);
+          const afterData = await imageDiffer.toBase64(tempAfterPath);
+
+          // If screenshots differ, content is scrollable
+          hasScrollable = beforeData !== afterData;
+
+          if (hasScrollable) {
+            this.deps.logger.info(`smart_checkpoint: ${step.name} - scrollable content detected via scroll test`);
+          }
+        }
 
         this.deps.logger.info(
           `smart_checkpoint: ${step.name} - scrollable view ${hasScrollable ? 'detected' : 'not found'}`
