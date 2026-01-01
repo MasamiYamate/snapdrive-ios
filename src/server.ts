@@ -170,74 +170,27 @@ Use this to find tap coordinates for elements:
 
   server.tool(
     'tap',
-    `Tap on the iOS Simulator screen. ALWAYS use coordinates (x, y) for tapping.
+    `Tap on the iOS Simulator screen at specific coordinates.
 
-IMPORTANT: Use coordinates obtained from screenshot or describe_ui, NOT accessibility labels.
-- First take a screenshot to see the current screen
-- Use describe_ui to get element coordinates
-- Tap using x/y coordinates from the element's frame
-
-Do NOT use label/labelContains parameters for test case creation - they require accessibility labels which may not be present.`,
+Usage:
+1. Use describe_ui to get element coordinates from frame property
+2. Calculate tap point: frame.x + frame.width/2, frame.y + frame.height/2
+3. Tap using those x/y coordinates`,
     {
-      x: z.number().optional().describe('X coordinate to tap (REQUIRED for test cases)'),
-      y: z.number().optional().describe('Y coordinate to tap (REQUIRED for test cases)'),
-      label: z.string().optional().describe('Label of element to tap (NOT recommended - use coordinates instead)'),
-      labelContains: z.string().optional().describe('Partial label match (NOT recommended - use coordinates instead)'),
+      x: z.number().describe('X coordinate to tap'),
+      y: z.number().describe('Y coordinate to tap'),
       duration: z.number().optional().describe('Tap duration in seconds (for long press)'),
       deviceUdid: z.string().optional().describe('Target simulator UDID'),
     },
-    async ({ x, y, label, labelContains, duration, deviceUdid }) => {
+    async ({ x, y, duration, deviceUdid }) => {
       try {
-        let tapX: number;
-        let tapY: number;
-
-        if (label || labelContains) {
-          // Find element and tap its center
-          const uiTree = await idbClient.describeAll(deviceUdid);
-          const result = elementFinder.findBest(uiTree.elements, { label, labelContains });
-
-          if (!result.found || !result.tapCoordinates) {
-            const availableLabels = elementFinder.getAllLabels(uiTree.elements).slice(0, 10);
-            return {
-              content: [
-                {
-                  type: 'text' as const,
-                  text: JSON.stringify({
-                    success: false,
-                    error: `Element not found: ${label ?? labelContains}`,
-                    availableLabels,
-                  }),
-                },
-              ],
-            };
-          }
-
-          tapX = result.tapCoordinates.x;
-          tapY = result.tapCoordinates.y;
-        } else if (x !== undefined && y !== undefined) {
-          tapX = x;
-          tapY = y;
-        } else {
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: JSON.stringify({
-                  success: false,
-                  error: 'Must provide either label/labelContains or x/y coordinates',
-                }),
-              },
-            ],
-          };
-        }
-
-        await idbClient.tap(tapX, tapY, { duration, deviceUdid });
+        await idbClient.tap(x, y, { duration, deviceUdid });
 
         return {
           content: [
             {
               type: 'text' as const,
-              text: JSON.stringify({ success: true, tappedAt: { x: tapX, y: tapY } }),
+              text: JSON.stringify({ success: true, tappedAt: { x, y } }),
             },
           ],
         };
@@ -1018,24 +971,14 @@ Do NOT use label/labelContains parameters for test case creation - they require 
 
   server.tool(
     'create_test_case',
-    `Create a new test case with scenario steps and optionally capture baseline screenshots immediately.
+    `Create a new test case with scenario steps and capture baseline screenshots.
 
-CRITICAL RULES:
-1. Do NOT modify any application source code or implementation files
-2. Do NOT add accessibility labels to the app
-3. ALWAYS use coordinates (x, y) for tap actions, NOT labels
-4. Get coordinates from describe_ui tool or screenshot analysis
+Workflow:
+1. Use screenshot and describe_ui to understand current screen
+2. Use tap/swipe/type_text to navigate (get coordinates from describe_ui frame)
+3. Use smart_checkpoint at destination screens
 
-Workflow for creating test cases:
-1. Take a screenshot to see the current screen
-2. Use describe_ui to get element coordinates from their frame property
-3. Create tap steps using x/y coordinates (e.g., tap at x:200 y:300)
-4. Use smart_checkpoint to capture destination screens
-
-Available checkpoint actions:
-- checkpoint: Captures current screen only
-- full_page_checkpoint: Always scrolls and captures entire scrollable content
-- smart_checkpoint: Auto-detects scrollable content (RECOMMENDED)`,
+IMPORTANT: Do NOT modify app source code. Only create test scenarios.`,
     {
       name: z.string().describe('Test case name/ID (used as directory name, e.g., "login-flow")'),
       displayName: z.string().optional().describe('Human-readable name (e.g., "ログインフロー")'),
