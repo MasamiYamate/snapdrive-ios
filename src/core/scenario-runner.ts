@@ -666,13 +666,15 @@ export class ScenarioRunner implements IScenarioRunner {
         await simctlClient.screenshot(tempBeforePath, context.deviceUdid);
         const beforeData = await imageDiffer.toBase64(tempBeforePath);
 
-        // Try to scroll down using detected scroll region (use slow drag, not fast swipe)
-        const scrollDistance = 100;
+        // Try to scroll down using detected scroll region
+        const scrollDistance = 200; // Larger distance for reliable detection
         await idbClient.swipe(centerX, centerY + scrollDistance / 2, centerX, centerY - scrollDistance / 2, {
           deviceUdid: context.deviceUdid,
-          duration: 0.5, // Slow drag to ensure scroll is triggered
+          duration: 0.3,
         });
-        await this.wait(300);
+        // Tap to stop inertia and prevent scroll bounce-back
+        await idbClient.tap(centerX, centerY, { deviceUdid: context.deviceUdid, duration: 0.05 });
+        await this.wait(200);
 
         // Take a screenshot after scroll
         const tempAfterPath = join(context.screenshotsDir, `${step.name}_scroll_detect_after.png`);
