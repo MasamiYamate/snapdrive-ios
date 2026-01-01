@@ -467,10 +467,20 @@ export class ScenarioRunner implements IScenarioRunner {
         const stitchImages = step.stitchImages ?? true;
         const tolerance = step.tolerance ?? 0;
 
+        // Get scroll region - use provided coordinates or detect from UI tree
+        let centerX = step.startX;
+        let centerY = step.startY;
+
+        if (centerX === undefined || centerY === undefined) {
+          const fpUiTree = await idbClient.describeAll(context.deviceUdid);
+          const scrollRegion = elementFinder.findScrollRegion(fpUiTree.elements);
+          centerX = scrollRegion?.centerX ?? 200;
+          centerY = scrollRegion?.centerY ?? 400;
+          this.deps.logger.info(`full_page_checkpoint: detected scroll region at (${centerX}, ${centerY})`);
+        }
+
         // Capture screenshots while scrolling
         const segmentPaths: string[] = [];
-        const centerX = 200;
-        const centerY = 400;
         const scrollDistance = step.scrollAmount ?? 300;
 
         // First, scroll to top if scrolling down
@@ -630,8 +640,17 @@ export class ScenarioRunner implements IScenarioRunner {
       case 'smart_checkpoint': {
         if (!step.name) throw new Error('smart_checkpoint requires name');
 
-        // First, try to detect scrollable views from accessibility tree
+        // Get UI tree and find best scroll region
         const uiTree = await idbClient.describeAll(context.deviceUdid);
+        const scrollRegion = elementFinder.findScrollRegion(uiTree.elements);
+        const centerX = scrollRegion?.centerX ?? 200;
+        const centerY = scrollRegion?.centerY ?? 400;
+
+        this.deps.logger.info(
+          `smart_checkpoint: ${step.name} - scroll region at (${centerX}, ${centerY})`
+        );
+
+        // First, try to detect scrollable views from accessibility tree
         let hasScrollable = elementFinder.hasScrollableView(uiTree.elements);
 
         // If not found in accessibility tree, try scroll detection
@@ -643,9 +662,7 @@ export class ScenarioRunner implements IScenarioRunner {
           await simctlClient.screenshot(tempBeforePath, context.deviceUdid);
           const beforeData = await imageDiffer.toBase64(tempBeforePath);
 
-          // Try to scroll down
-          const centerX = 200;
-          const centerY = 400;
+          // Try to scroll down using detected scroll region
           const scrollDistance = 100;
           await idbClient.swipe(centerX, centerY + scrollDistance / 2, centerX, centerY - scrollDistance / 2, {
             deviceUdid: context.deviceUdid,
@@ -670,13 +687,16 @@ export class ScenarioRunner implements IScenarioRunner {
         );
 
         if (hasScrollable) {
-          // Use full_page_checkpoint logic
+          // Use full_page_checkpoint logic with detected scroll region
           const scrollStep = {
             ...step,
             action: 'full_page_checkpoint' as const,
             scrollDirection: step.scrollDirection ?? 'down',
             maxScrolls: step.maxScrolls ?? 50,
             stitchImages: step.stitchImages ?? true,
+            // Pass scroll region center coordinates
+            startX: centerX,
+            startY: centerY,
           };
           return this.executeStep(scrollStep, context);
         } else {
