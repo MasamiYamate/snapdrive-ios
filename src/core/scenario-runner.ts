@@ -492,7 +492,9 @@ export class ScenarioRunner implements IScenarioRunner {
               deviceUdid: context.deviceUdid,
               duration: 0.3, // Use drag instead of fast swipe
             });
-            await this.wait(200);
+            // Tap to stop inertia scroll
+            await idbClient.tap(centerX, centerY, { deviceUdid: context.deviceUdid, duration: 0.05 });
+            await this.wait(150);
 
             // Check if we've reached the top
             const tempPath = join(context.screenshotsDir, `${step.name}_temp_top.png`);
@@ -547,7 +549,9 @@ export class ScenarioRunner implements IScenarioRunner {
             deviceUdid: context.deviceUdid,
             duration: 0.3, // Use drag instead of fast swipe
           });
-          await this.wait(300);
+          // Tap to stop inertia scroll, then wait for UI to settle
+          await idbClient.tap(centerX, centerY, { deviceUdid: context.deviceUdid, duration: 0.05 });
+          await this.wait(200);
         }
 
         this.deps.logger.info(`Captured ${segmentPaths.length} scroll segments for ${step.name}`);
