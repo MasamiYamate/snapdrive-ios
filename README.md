@@ -76,6 +76,7 @@ With environment variables:
 - [Usage Guide](docs/usage.md) - Basic operations
 - [Test Cases](docs/test-cases.md) - Creating and running structured tests
 - [CLI](docs/cli.md) - Command-line tool usage
+- [Fastlane Integration](docs/fastlane.md) - CI/CD with Fastlane
 - [MCP Tools Reference](docs/tools.md) - Available tools reference
 
 ## License

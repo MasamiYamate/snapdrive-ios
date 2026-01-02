@@ -1,0 +1,211 @@
+# Fastlane Integration
+
+[English](fastlane.md) | [日本語](fastlane.ja.md)
+
+Integrate SnapDrive visual regression tests into your Fastlane workflow.
+
+## Setup
+
+### 1. Install SnapDrive
+
+Add to your project or install globally:
+
+```bash
+npm install -g snapdrive-mcp
+```
+
+### 2. Create a Custom Lane
+
+Add to your `Fastfile`:
+
+```ruby
+desc "Run SnapDrive visual regression tests"
+lane :visual_tests do
+  # Boot simulator
+  sh("xcrun simctl boot 'iPhone 15' || true")
+
+  # Build the app
+  build_app(
+    scheme: "YourApp",
+    configuration: "Debug",
+    destination: "generic/platform=iOS Simulator",
+    derived_data_path: "./build",
+    skip_archive: true,
+    skip_codesigning: true
+  )
+
+  # Install app to simulator
+  app_path = Dir["./build/Build/Products/Debug-iphonesimulator/*.app"].first
+  sh("xcrun simctl install booted '#{app_path}'")
+
+  # Run SnapDrive tests
+  sh("npx snapdrive run --all --snapdrive-dir ./.snapdrive")
+end
+
+desc "Update SnapDrive baselines"
+lane :update_baselines do
+  sh("xcrun simctl boot 'iPhone 15' || true")
+
+  build_app(
+    scheme: "YourApp",
+    configuration: "Debug",
+    destination: "generic/platform=iOS Simulator",
+    derived_data_path: "./build",
+    skip_archive: true,
+    skip_codesigning: true
+  )
+
+  app_path = Dir["./build/Build/Products/Debug-iphonesimulator/*.app"].first
+  sh("xcrun simctl install booted '#{app_path}'")
+
+  sh("npx snapdrive run --all --update-baselines --snapdrive-dir ./.snapdrive")
+end
+```
+
+## GitHub Actions with Fastlane
+
+```yaml
+name: Visual Regression Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-tests:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install fb-idb
+        run: pip install fb-idb
+
+      - name: Run Visual Tests
+        run: bundle exec fastlane visual_tests
+        continue-on-error: true
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: snapdrive-report
+          path: results/*/report.html
+```
+
+## Bitrise Integration
+
+Add a Script step to your `bitrise.yml`:
+
+```yaml
+workflows:
+  visual-tests:
+    steps:
+      - activate-ssh-key@4: {}
+      - git-clone@8: {}
+      - xcode-build-for-simulator@0:
+          inputs:
+            - scheme: YourApp
+            - simulator_device: iPhone 15
+      - script@1:
+          title: Run SnapDrive Tests
+          inputs:
+            - content: |
+                #!/bin/bash
+                set -ex
+                pip install fb-idb
+                npm install -g snapdrive-mcp
+                xcrun simctl boot "iPhone 15" || true
+                npx snapdrive run --all
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - deploy_path: results/*/report.html
+```
+
+## Advanced: Custom Reporting
+
+Send results to Slack after tests complete:
+
+```ruby
+desc "Run visual tests with Slack notification"
+lane :visual_tests_with_notification do
+  begin
+    visual_tests
+    slack(
+      message: "✅ Visual regression tests passed",
+      success: true,
+      slack_url: ENV["SLACK_WEBHOOK_URL"]
+    )
+  rescue => e
+    slack(
+      message: "❌ Visual regression tests failed",
+      success: false,
+      slack_url: ENV["SLACK_WEBHOOK_URL"],
+      attachment_properties: {
+        fields: [
+          { title: "Error", value: e.message }
+        ]
+      }
+    )
+    raise e
+  end
+end
+```
+
+## Tips
+
+### Parallel Testing
+
+Run multiple test cases in parallel using Fastlane's `parallel` block:
+
+```ruby
+lane :parallel_visual_tests do
+  test_cases = ["login-flow", "settings-view", "profile-screen"]
+
+  test_cases.each do |test_case|
+    sh("npx snapdrive run #{test_case} &")
+  end
+
+  # Wait for all tests to complete
+  sh("wait")
+end
+```
+
+### Device Matrix
+
+Test across multiple simulators:
+
+```ruby
+lane :multi_device_tests do
+  devices = ["iPhone 15", "iPhone 15 Pro Max", "iPad Pro (12.9-inch)"]
+
+  devices.each do |device|
+    sh("xcrun simctl boot '#{device}' || true")
+    sh("npx snapdrive run --all --device $(xcrun simctl list devices | grep '#{device}' | grep -oE '[A-F0-9-]{36}')")
+  end
+end
+```
+
+### Baseline Management
+
+Update baselines only on the main branch:
+
+```ruby
+lane :ci_visual_tests do
+  if ENV["CI"] && git_branch == "main"
+    update_baselines
+  else
+    visual_tests
+  end
+end
+```

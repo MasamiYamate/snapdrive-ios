@@ -76,6 +76,7 @@ pip install fb-idb
 - [使い方ガイド](docs/usage.md) - 基本的な操作方法
 - [テストケース](docs/test-cases.md) - 構造化テストの作成と実行
 - [CLI](docs/cli.md) - コマンドラインツールの使い方
+- [Fastlane統合](docs/fastlane.md) - FastlaneでのCI/CD連携
 - [MCPツール一覧](docs/tools.md) - 利用可能なツールのリファレンス
 
 ## ライセンス
