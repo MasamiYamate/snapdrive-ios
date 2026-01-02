@@ -71,6 +71,19 @@ With environment variables:
 | `SNAPDRIVE_RESULTS_DIR` | Results output directory | `./results` |
 | `SNAPDRIVE_LOG_LEVEL` | Log level (debug/info/warn/error) | `info` |
 
+## Version Control
+
+The `.snapdrive` directory should be committed to Git:
+
+```bash
+git add .snapdrive/
+git commit -m "Add SnapDrive test cases and baselines"
+```
+
+This allows your team to share test scenarios and baselines, ensuring consistent visual regression testing across all environments.
+
+> **Note**: The `results/` directory contains test execution outputs and should be added to `.gitignore`.
+
 ## Documentation
 
 - [Usage Guide](docs/usage.md) - Basic operations

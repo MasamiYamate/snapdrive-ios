@@ -71,6 +71,19 @@ pip install fb-idb
 | `SNAPDRIVE_RESULTS_DIR` | 結果出力先 | `./results` |
 | `SNAPDRIVE_LOG_LEVEL` | ログレベル (debug/info/warn/error) | `info` |
 
+## バージョン管理
+
+`.snapdrive`ディレクトリはGitにコミットしてください:
+
+```bash
+git add .snapdrive/
+git commit -m "Add SnapDrive test cases and baselines"
+```
+
+テストシナリオとBaselineをチームで共有することで、全環境で一貫したビジュアルリグレッションテストが可能になります。
+
+> **Note**: `results/`ディレクトリはテスト実行結果のため、`.gitignore`に追加してください。
+
 ## ドキュメント
 
 - [使い方ガイド](docs/usage.md) - 基本的な操作方法
