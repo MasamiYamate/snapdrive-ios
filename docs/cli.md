@@ -84,16 +84,3 @@ jobs:
 | `0` | All tests passed |
 | `1` | Test failure or error |
 
-## Local Development
-
-```bash
-# Build
-npm run build
-
-# Register globally with npm link
-npm link
-
-# Run directly
-snapdrive-ios list
-snapdrive-ios run login-flow
-```

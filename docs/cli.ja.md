@@ -84,16 +84,3 @@ jobs:
 | `0` | 全テスト成功 |
 | `1` | テスト失敗またはエラー |
 
-## ローカル開発
-
-```bash
-# ビルド
-npm run build
-
-# npm linkでグローバルに登録
-npm link
-
-# 直接実行
-snapdrive-ios list
-snapdrive-ios run login-flow
-```
