@@ -1123,7 +1123,6 @@ IMPORTANT: Do NOT modify app source code. Only create test scenarios.`,
 
 export async function startServer(): Promise<void> {
   const config: Partial<ServerConfig> = {
-    baselinesDir: process.env['SNAPDRIVE_BASELINES_DIR'] ?? './baselines',
     resultsDir: process.env['SNAPDRIVE_RESULTS_DIR'] ?? './results',
     logLevel: (process.env['SNAPDRIVE_LOG_LEVEL'] as ServerConfig['logLevel']) ?? 'info',
   };

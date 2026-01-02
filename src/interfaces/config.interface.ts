@@ -4,7 +4,6 @@
 
 export interface ServerConfig {
   // Paths
-  baselinesDir: string;
   resultsDir: string;
 
   // Defaults
@@ -28,7 +27,6 @@ export interface ServerConfig {
 }
 
 export const DEFAULT_CONFIG: ServerConfig = {
-  baselinesDir: './baselines',
   resultsDir: './results',
   defaultTimeoutMs: 8000,
   defaultPollIntervalMs: 500,

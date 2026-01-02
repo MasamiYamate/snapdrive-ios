@@ -54,7 +54,6 @@ With environment variables:
       "command": "npx",
       "args": ["snapdrive-mcp"],
       "env": {
-        "SNAPDRIVE_BASELINES_DIR": "/path/to/your/project/.snapdrive/baselines",
         "SNAPDRIVE_RESULTS_DIR": "/path/to/your/project/results",
         "SNAPDRIVE_LOG_LEVEL": "debug"
       }
@@ -67,7 +66,6 @@ With environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SNAPDRIVE_BASELINES_DIR` | Baseline images directory | `./baselines` |
 | `SNAPDRIVE_RESULTS_DIR` | Results output directory | `./results` |
 | `SNAPDRIVE_LOG_LEVEL` | Log level (debug/info/warn/error) | `info` |
 
