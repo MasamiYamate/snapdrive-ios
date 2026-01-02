@@ -1,13 +1,21 @@
 {
   "name": "snapdrive-mcp",
   "version": "0.1.0",
-  "description": "MCP server for iOS Simulator automation using idb and simctl",
+  "description": "Snapshot testing tool for iOS. AI Agent-powered iOS Simulator automation for visual regression testing.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "snapdrive-mcp": "dist/index.js",
     "snapdrive": "dist/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MasamiYamate/snapdrive-ios.git"
+  },
+  "homepage": "https://github.com/MasamiYamate/snapdrive-ios#readme",
+  "bugs": {
+    "url": "https://github.com/MasamiYamate/snapdrive-ios/issues"
   },
   "scripts": {
     "build": "tsc",
@@ -26,12 +34,14 @@
     "mcp",
     "ios",
     "simulator",
-    "testing",
+    "snapshot-testing",
+    "visual-regression",
     "automation",
     "idb",
-    "claude"
+    "claude",
+    "ai-agent"
   ],
-  "author": "",
+  "author": "aikawa_japan <yamate.inquiry@mail.yamatte.net>",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
