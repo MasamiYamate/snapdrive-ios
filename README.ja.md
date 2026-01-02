@@ -39,7 +39,7 @@ pip install fb-idb
   "mcpServers": {
     "snapdrive": {
       "command": "npx",
-      "args": ["snapdrive-ios-mcp"]
+      "args": ["snapdrive-ios"]
     }
   }
 }
@@ -52,7 +52,7 @@ pip install fb-idb
   "mcpServers": {
     "snapdrive": {
       "command": "npx",
-      "args": ["snapdrive-ios-mcp"],
+      "args": ["snapdrive-ios"],
       "env": {
         "SNAPDRIVE_RESULTS_DIR": "/path/to/your/project/results",
         "SNAPDRIVE_LOG_LEVEL": "debug"

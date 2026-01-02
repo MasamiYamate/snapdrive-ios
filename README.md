@@ -39,7 +39,7 @@ Add to `.mcp.json`:
   "mcpServers": {
     "snapdrive": {
       "command": "npx",
-      "args": ["snapdrive-ios-mcp"]
+      "args": ["snapdrive-ios"]
     }
   }
 }
@@ -52,7 +52,7 @@ With environment variables:
   "mcpServers": {
     "snapdrive": {
       "command": "npx",
-      "args": ["snapdrive-ios-mcp"],
+      "args": ["snapdrive-ios"],
       "env": {
         "SNAPDRIVE_RESULTS_DIR": "/path/to/your/project/results",
         "SNAPDRIVE_LOG_LEVEL": "debug"

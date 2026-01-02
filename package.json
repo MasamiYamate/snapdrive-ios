@@ -1,13 +1,13 @@
 {
   "name": "snapdrive-ios",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Snapshot testing tool for iOS. AI Agent-powered iOS Simulator automation for visual regression testing.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "snapdrive-ios-mcp": "dist/index.js",
-    "snapdrive-ios": "dist/cli.js"
+    "snapdrive-ios": "dist/index.js",
+    "snapdrive-ios-cli": "dist/cli.js"
   },
   "repository": {
     "type": "git",
