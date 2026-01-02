@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/header.png" alt="SnapDrive" width="100%">
+</p>
+
 # SnapDrive MCP Server
 
 iOS Simulator自動操作用のMCPサーバー。Claude Desktop/Codeから自然言語でシミュレーターを操作できます。
