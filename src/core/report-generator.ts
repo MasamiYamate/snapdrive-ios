@@ -5,7 +5,8 @@
 
 import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { TestRunResult, TestCaseResult, CheckpointResult } from '../interfaces/scenario.interface.js';
 import type { ILogger } from '../utils/logger.js';
 import { Logger } from '../utils/logger.js';
@@ -16,9 +17,40 @@ export interface IReportGenerator {
 
 export class ReportGenerator implements IReportGenerator {
   private logger: ILogger;
+  private logoDataUri: string | null = null;
 
   constructor(logger?: ILogger) {
     this.logger = logger ?? new Logger('report-generator');
+  }
+
+  /**
+   * Load logo image as base64 data URI
+   */
+  private async getLogoDataUri(): Promise<string | null> {
+    if (this.logoDataUri !== null) {
+      return this.logoDataUri;
+    }
+
+    try {
+      // Get the path to the logo relative to this source file
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const logoPath = join(__dirname, '../../docs/images/logo.png');
+
+      if (!existsSync(logoPath)) {
+        this.logger.debug(`Logo not found: ${logoPath}`);
+        this.logoDataUri = '';
+        return null;
+      }
+
+      const buffer = await readFile(logoPath);
+      this.logoDataUri = `data:image/png;base64,${buffer.toString('base64')}`;
+      return this.logoDataUri;
+    } catch (error) {
+      this.logger.debug(`Failed to load logo: ${error}`);
+      this.logoDataUri = '';
+      return null;
+    }
   }
 
   /**
@@ -56,6 +88,9 @@ export class ReportGenerator implements IReportGenerator {
   private async buildHtml(result: TestRunResult): Promise<string> {
     const passRate = result.totalTests > 0 ? ((result.passed / result.totalTests) * 100).toFixed(1) : '0';
 
+    // Load logo
+    const logoDataUri = await this.getLogoDataUri();
+
     // Build test case HTML with embedded images
     const testCasesHtml: string[] = [];
     for (const tc of result.results) {
@@ -88,7 +123,17 @@ export class ReportGenerator implements IReportGenerator {
       padding: 2rem;
     }
     .container { max-width: 1400px; margin: 0 auto; }
-    h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+    .report-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .report-logo {
+      height: 40px;
+      width: auto;
+    }
+    h1 { font-size: 1.5rem; margin: 0; }
     h2 { font-size: 1.25rem; margin-bottom: 0.75rem; }
     h3 { font-size: 1rem; margin-bottom: 0.5rem; }
     h4 { font-size: 0.875rem; margin-bottom: 0.5rem; color: var(--color-text-muted); }
@@ -418,7 +463,10 @@ export class ReportGenerator implements IReportGenerator {
 </head>
 <body>
   <div class="container">
-    <h1>SnapDrive Test Report</h1>
+    <div class="report-header">
+      ${logoDataUri ? `<img src="${logoDataUri}" alt="SnapDrive" class="report-logo">` : ''}
+      <h1>Test Report</h1>
+    </div>
 
     <div class="summary">
       <h2>Summary</h2>
