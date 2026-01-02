@@ -1,84 +1,86 @@
-# 使い方ガイド
+# Usage Guide
 
-## ワークフロー概要
+[English](usage.md) | [日本語](usage.ja.md)
 
-SnapDriveでのテストは以下の流れで行います:
+## Workflow Overview
 
-1. **テストシナリオを作成** - Claudeに自然言語で指示、Baselineも同時に取得
-2. **リポジトリにコミット** - シナリオとBaselineをチームで共有
-3. **差分検証** - 以後の実行でBaselineとの差分を検出
+Testing with SnapDrive follows this flow:
 
-## Step 1: テストシナリオの作成
+1. **Create test scenario** - Instruct AI Agent in natural language, Baseline captured simultaneously
+2. **Commit to repository** - Share scenarios and Baselines with your team
+3. **Diff verification** - Detect differences from Baseline on subsequent runs
 
-Claudeに自然言語でテストしたい内容を伝えるだけで、シナリオ作成からBaseline取得まで自動で行います。
+## Step 1: Create Test Scenario
 
-> **注意**: テストケース作成時、Claudeは**アプリの実装コードを変更しません**。テストは既存の動作を検証するためのものです。
+Simply tell the AI Agent what you want to test in natural language, and it will automatically create the scenario and capture Baselines.
 
-### 遷移テストの例
+> **Note**: When creating test cases, AI Agent **does not modify your app's implementation code**. Tests are for verifying existing behavior.
 
-```
-起動画面からログイン画面への遷移をテストしたい。
-「navigate-to-login」という名前でテストケースを作成して。
-```
+### Navigation Test Examples
 
 ```
-タブバーの「設定」をタップしてProfileViewControllerが表示されることを確認したい。
-「open-profile」というテストケースを作成して。
-```
-
-Claudeが自動で:
-1. アプリを起動して現在の画面を確認
-2. 指定された操作を実行しながらシナリオを構築
-3. 遷移先の画面で`smart_checkpoint`を設定
-   - スクロールViewがあれば全体をキャプチャ
-   - なければ通常のスクリーンショット
-4. Baselineを取得して`.snapdrive/test-cases/`に保存
-
-### フロー全体のテスト
-
-```
-ログインフローをテストしたい。
-1. 起動画面で「ログイン」ボタンをタップ
-2. メールアドレスとパスワードを入力して送信
-3. ホーム画面が表示されることを確認
-「login-flow」という名前で作成して。
+I want to test navigation from launch screen to login screen.
+Create a test case named "navigate-to-login".
 ```
 
 ```
-商品をカートに追加して購入完了までの流れをテストしたい。
-「purchase-flow」として作成して。
+I want to tap "Settings" in the tab bar and verify ProfileViewController is displayed.
+Create a test case named "open-profile".
 ```
 
-## Step 2: リポジトリにコミット
+AI Agent will automatically:
+1. Launch the app and check the current screen
+2. Execute specified operations while building the scenario
+3. Set `smart_checkpoint` at the destination screen
+   - Captures full page if scrollable view exists
+   - Otherwise takes a normal screenshot
+4. Capture Baseline and save to `.snapdrive/test-cases/`
 
-作成されたテストケースとBaselineをGitにコミットします:
+### Testing Complete Flows
+
+```
+I want to test the login flow.
+1. Tap "Login" button on launch screen
+2. Enter email and password, then submit
+3. Verify home screen is displayed
+Create it as "login-flow".
+```
+
+```
+I want to test adding a product to cart through purchase completion.
+Create it as "purchase-flow".
+```
+
+## Step 2: Commit to Repository
+
+Commit the created test cases and Baselines to Git:
 
 ```bash
 git add .snapdrive/
 git commit -m "Add login-flow test case with baselines"
 ```
 
-Baselineをリポジトリに含めることで、チーム全体で同じ基準でUIを検証できます。
+Including Baselines in the repository allows the entire team to verify UI against the same standards.
 
-## Step 3: 差分検証
+## Step 3: Diff Verification
 
-コード変更後、テストを実行してUIの差分を検出します:
-
-```
-login-flowテストケースを実行して
-```
-
-Baselineと現在の画面を比較し、差分があればHTMLレポートで確認できます。
-
-### Baselineの更新
-
-意図的なUI変更の場合は、Baselineを更新します:
+After code changes, run tests to detect UI differences:
 
 ```
-login-flowテストケースを実行してbaselineを更新して
+Run the login-flow test case
 ```
 
-## 次のステップ
+Compares current screen with Baseline, and if there are differences, you can review them in the HTML report.
 
-- [テストケースの詳細](test-cases.md) - シナリオファイルの書式とアクション一覧
-- [CLIでの自動実行](cli.md) - CI/CDでの利用方法
+### Updating Baselines
+
+For intentional UI changes, update the Baselines:
+
+```
+Run the login-flow test case and update baselines
+```
+
+## Next Steps
+
+- [Test Case Details](test-cases.md) - Scenario file format and action reference
+- [CLI Automation](cli.md) - Using with CI/CD

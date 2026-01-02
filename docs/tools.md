@@ -1,229 +1,231 @@
-# MCPツール一覧
+# MCP Tools Reference
 
-SnapDrive MCPサーバーが提供するツールのリファレンスです。
+[English](tools.md) | [日本語](tools.ja.md)
 
-## 観測ツール
+Reference for tools provided by the SnapDrive MCP server.
+
+## Observation Tools
 
 ### screenshot
 
-スクリーンショットを取得します（base64画像を返す）。
+Capture a screenshot (returns base64 image).
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `name` | string? | スクリーンショット名 |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string? | Screenshot name |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### describe_ui
 
-画面上の全UI要素を取得します。
+Get all UI elements on the screen.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### find_element
 
-ラベル・タイプでUI要素を検索します。
+Search for UI elements by label or type.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `label` | string? | 完全一致ラベル |
-| `labelContains` | string? | 部分一致ラベル |
-| `type` | string? | 要素タイプ |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `label` | string? | Exact match label |
+| `labelContains` | string? | Partial match label |
+| `type` | string? | Element type |
+| `deviceUdid` | string? | Target simulator UDID |
 
-## 操作ツール
+## Action Tools
 
 ### tap
 
-座標またはラベル指定でタップします。
+Tap by coordinates or label.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `x` | number? | X座標 |
-| `y` | number? | Y座標 |
-| `label` | string? | タップ対象のラベル |
-| `labelContains` | string? | 部分一致ラベル |
-| `duration` | number? | 長押し時間(ms) |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `x` | number? | X coordinate |
+| `y` | number? | Y coordinate |
+| `label` | string? | Tap target label |
+| `labelContains` | string? | Partial match label |
+| `duration` | number? | Long press duration (ms) |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### swipe
 
-スワイプ操作を行います。
+Perform swipe gesture.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `direction` | string? | 方向 (up/down/left/right) |
-| `startX` | number? | 開始X座標 |
-| `startY` | number? | 開始Y座標 |
-| `endX` | number? | 終了X座標 |
-| `endY` | number? | 終了Y座標 |
-| `duration` | number? | スワイプ時間(ms) |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `direction` | string? | Direction (up/down/left/right) |
+| `startX` | number? | Start X coordinate |
+| `startY` | number? | Start Y coordinate |
+| `endX` | number? | End X coordinate |
+| `endY` | number? | End Y coordinate |
+| `duration` | number? | Swipe duration (ms) |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### type_text
 
-テキストを入力します。
+Input text.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `text` | string | 入力テキスト |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `text` | string | Input text |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### wait
 
-指定秒数待機します。
+Wait for specified seconds.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `seconds` | number | 待機秒数 |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `seconds` | number | Wait time in seconds |
 
 ### wait_for_element
 
-要素が表示されるまで待機します。
+Wait until an element appears.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `label` | string? | 完全一致ラベル |
-| `labelContains` | string? | 部分一致ラベル |
-| `type` | string? | 要素タイプ |
-| `timeoutMs` | number? | タイムアウト(ms) |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `label` | string? | Exact match label |
+| `labelContains` | string? | Partial match label |
+| `type` | string? | Element type |
+| `timeoutMs` | number? | Timeout (ms) |
+| `deviceUdid` | string? | Target simulator UDID |
 
-## 検証ツール
+## Verification Tools
 
 ### compare_screenshot
 
-baseline画像と現在の画面を比較します。
+Compare current screen with baseline image.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `baselineName` | string | ベースライン名 |
-| `profile` | string? | プロファイル名 (default: "default") |
-| `tolerance` | number? | 許容誤差(%) |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `baselineName` | string | Baseline name |
+| `profile` | string? | Profile name (default: "default") |
+| `tolerance` | number? | Tolerance (%) |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### update_baseline
 
-現在の画面をbaselineとして保存します。
+Save current screen as baseline.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `name` | string | ベースライン名 |
-| `profile` | string? | プロファイル名 |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Baseline name |
+| `profile` | string? | Profile name |
+| `deviceUdid` | string? | Target simulator UDID |
 
-## シミュレーター管理
+## Simulator Management
 
 ### list_simulators
 
-利用可能なシミュレーター一覧を取得します。
+Get list of available simulators.
 
 ### boot_simulator
 
-シミュレーターを起動します。
+Boot a simulator.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `udid` | string? | シミュレーターUDID |
-| `name` | string? | シミュレーター名 |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `udid` | string? | Simulator UDID |
+| `name` | string? | Simulator name |
 
 ### install_app
 
-.appバンドルをインストールします。
+Install a .app bundle.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `appPath` | string | .appバンドルのパス |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `appPath` | string | Path to .app bundle |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### launch_app
 
-アプリを起動します。
+Launch an app.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `bundleId` | string | バンドルID |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `bundleId` | string | Bundle ID |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### terminate_app
 
-アプリを終了します。
+Terminate an app.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `bundleId` | string | バンドルID |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `bundleId` | string | Bundle ID |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### build_and_run
 
-Xcodeスキーム名でビルド→インストール→起動します。
+Build, install, and launch using Xcode scheme name.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `scheme` | string | Xcodeスキーム名 |
-| `projectDir` | string? | プロジェクトディレクトリ |
-| `simulatorName` | string? | シミュレーター名 |
-| `configuration` | string? | ビルド構成 (Debug/Release) |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `scheme` | string | Xcode scheme name |
+| `projectDir` | string? | Project directory |
+| `simulatorName` | string? | Simulator name |
+| `configuration` | string? | Build configuration (Debug/Release) |
 
 ### open_url
 
-URLまたはディープリンクを開きます。
+Open a URL or deep link.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
+| Parameter | Type | Description |
+|-----------|------|-------------|
 | `url` | string | URL |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| `deviceUdid` | string? | Target simulator UDID |
 
-## テストケース管理
+## Test Case Management
 
 ### list_test_cases
 
-`.snapdrive/test-cases`内のテストケース一覧を取得します。
+Get list of test cases in `.snapdrive/test-cases`.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `snapdriveDir` | string? | .snapdriveディレクトリのパス |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `snapdriveDir` | string? | Path to .snapdrive directory |
 
 ### run_test_case
 
-テストケースを実行し、HTMLレポートを生成します。
+Run a test case and generate HTML report.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `testCaseId` | string? | テストケースID |
-| `testCasePath` | string? | テストケースのフルパス |
-| `snapdriveDir` | string? | .snapdriveディレクトリのパス |
-| `updateBaselines` | boolean? | ベースライン更新モード |
-| `generateReport` | boolean? | レポート生成 (default: true) |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `testCaseId` | string? | Test case ID |
+| `testCasePath` | string? | Full path to test case |
+| `snapdriveDir` | string? | Path to .snapdrive directory |
+| `updateBaselines` | boolean? | Baseline update mode |
+| `generateReport` | boolean? | Generate report (default: true) |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### run_all_tests
 
-全テストケースを実行してHTMLレポートを生成します。
+Run all test cases and generate HTML report.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `snapdriveDir` | string? | .snapdriveディレクトリのパス |
-| `updateBaselines` | boolean? | ベースライン更新モード |
-| `generateReport` | boolean? | レポート生成 (default: true) |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `snapdriveDir` | string? | Path to .snapdrive directory |
+| `updateBaselines` | boolean? | Baseline update mode |
+| `generateReport` | boolean? | Generate report (default: true) |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### create_test_case
 
-新規テストケースを作成し、オプションでBaselineも同時に取得します。
+Create a new test case, optionally capturing baselines simultaneously.
 
-| パラメータ | 型 | 説明 |
-|-----------|-----|------|
-| `name` | string | テストケースID（ディレクトリ名） |
-| `displayName` | string? | 表示名 |
-| `description` | string? | 説明 |
-| `steps` | array? | シナリオステップ |
-| `createBaselines` | boolean? | シナリオ実行してBaselineを取得 (default: false) |
-| `deviceUdid` | string? | 対象シミュレーターUDID |
-| `snapdriveDir` | string? | .snapdriveディレクトリのパス |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Test case ID (directory name) |
+| `displayName` | string? | Display name |
+| `description` | string? | Description |
+| `steps` | array? | Scenario steps |
+| `createBaselines` | boolean? | Execute scenario and capture baselines (default: false) |
+| `deviceUdid` | string? | Target simulator UDID |
+| `snapdriveDir` | string? | Path to .snapdrive directory |
 
-**checkpointアクションの種類:**
-- `checkpoint`: 現在の画面のみキャプチャ
-- `full_page_checkpoint`: スクロールして全体をキャプチャ
-- `smart_checkpoint`: **推奨** - スクロールViewを自動検出して適切な方法を選択
+**Checkpoint action types:**
+- `checkpoint`: Capture current screen only
+- `full_page_checkpoint`: Scroll and capture entire content
+- `smart_checkpoint`: **Recommended** - Auto-detect scrollable views and choose appropriate method

@@ -1,40 +1,40 @@
-# CLI (Command Line Execution)
+# CLI（コマンドライン実行）
 
 [English](cli.md) | [日本語](cli.ja.md)
 
-Run tests without Claude. Ideal for CI/CD integration.
+Claudeを介さずにテストを実行できます。CI/CD統合に最適です。
 
-## Commands
+## コマンド
 
 ```bash
-# List test cases
+# テストケース一覧
 npx snapdrive list
 
-# Run specific test case
+# 特定のテストケースを実行
 npx snapdrive run login-flow
 
-# Run all test cases
+# 全テストケースを実行
 npx snapdrive run --all
 
-# Update baselines mode
+# ベースライン更新モード
 npx snapdrive run login-flow --update-baselines
 
-# Verbose output
+# 詳細ログ出力
 npx snapdrive run --all --verbose
 ```
 
-## Options
+## オプション
 
-| Option | Description |
-|--------|-------------|
-| `--all` | Run all test cases |
-| `--update-baselines` | Update baseline images (save instead of compare) |
-| `--snapdrive-dir <path>` | Path to `.snapdrive` directory (default: `./.snapdrive`) |
-| `--results-dir <path>` | Results output directory (default: `./results`) |
-| `--device <udid>` | Target simulator UDID |
-| `--verbose` | Enable verbose logging |
+| オプション | 説明 |
+|-----------|------|
+| `--all` | 全テストケースを実行 |
+| `--update-baselines` | ベースライン画像を更新（比較ではなく保存） |
+| `--snapdrive-dir <path>` | `.snapdrive`ディレクトリのパス（デフォルト: `./.snapdrive`） |
+| `--results-dir <path>` | 結果出力先（デフォルト: `./results`） |
+| `--device <udid>` | 対象シミュレーターのUDID |
+| `--verbose` | 詳細ログを出力 |
 
-## CI/CD Integration Example
+## CI/CD統合例
 
 ### GitHub Actions
 
@@ -77,23 +77,23 @@ jobs:
           path: results/*/report.html
 ```
 
-## Exit Codes
+## 終了コード
 
-| Code | Meaning |
-|------|---------|
-| `0` | All tests passed |
-| `1` | Test failure or error |
+| コード | 意味 |
+|--------|------|
+| `0` | 全テスト成功 |
+| `1` | テスト失敗またはエラー |
 
-## Local Development
+## ローカル開発
 
 ```bash
-# Build
+# ビルド
 npm run build
 
-# Register globally with npm link
+# npm linkでグローバルに登録
 npm link
 
-# Run directly
+# 直接実行
 snapdrive list
 snapdrive run login-flow
 ```

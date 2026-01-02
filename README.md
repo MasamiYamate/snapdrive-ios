@@ -14,15 +14,7 @@
 
 # SnapDrive
 
-Visual regression testing tool for iOS Simulator. You can also control the simulator with natural language from Claude Desktop/Code using MCP.
-
-## Features
-
-- **Natural Language Control**: Just say "tap the login button" and it works
-- **Auto Build & Run**: Specify Xcode scheme name to build → install → launch
-- **Screenshot Comparison**: Detect differences against baseline images
-- **HTML Reports**: Visually review test results and screenshot diffs
-- **CLI Support**: Command-line tool for CI/CD integration
+Snapshot testing tool for iOS. Leverages AI Agents to autonomously operate iOS Simulator, automatically generating test scenarios and baselines. Adapts flexibly to UI changes, preventing test case decay.
 
 ## Requirements
 

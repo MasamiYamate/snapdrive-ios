@@ -1,56 +1,58 @@
-# テストケース
+# Test Cases
 
-構造化されたテストケースを定義し、再現可能なテストを実行できます。
+[English](test-cases.md) | [日本語](test-cases.ja.md)
 
-## ディレクトリ構造
+Define structured test cases and run reproducible tests.
+
+## Directory Structure
 
 ```
 your-project/
 ├── .snapdrive/
 │   ├── test-cases/
 │   │   ├── login-flow/
-│   │   │   ├── scenario.yaml       # シナリオ定義
+│   │   │   ├── scenario.yaml       # Scenario definition
 │   │   │   └── baselines/
 │   │   │       ├── login_screen.png
 │   │   │       └── home_screen.png
 │   │   └── profile-view/
 │   │       ├── scenario.yaml
 │   │       └── baselines/
-│   └── results/                    # 自動生成
+│   └── results/                    # Auto-generated
 │       └── 2025-01-01T.../
-│           ├── report.html         # HTMLレポート
+│           ├── report.html         # HTML report
 │           ├── screenshots/
 │           └── diffs/
 ```
 
-## シナリオファイル（scenario.yaml）
+## Scenario File (scenario.yaml)
 
 ```yaml
-name: ログインフロー
-description: メール/パスワードでログインしてホーム画面を確認
+name: Login Flow
+description: Login with email/password and verify home screen
 steps:
   - action: launch_app
     bundleId: com.example.app
 
   - action: tap
-    label: "ログイン"
+    label: "Login"
 
   - action: type_text
     text: "test@example.com"
-    target: "メールアドレス"
+    target: "Email"
 
   - action: tap
-    label: "次へ"
+    label: "Next"
 
   - action: type_text
     text: "password123"
-    target: "パスワード"
+    target: "Password"
 
   - action: tap
-    label: "送信"
+    label: "Submit"
 
   - action: wait_for_element
-    label: "ホーム"
+    label: "Home"
     timeoutMs: 10000
 
   - action: checkpoint
@@ -58,26 +60,26 @@ steps:
     compare: true
 ```
 
-## 使用可能なアクション
+## Available Actions
 
-| アクション | パラメータ | 説明 |
-|-----------|-----------|------|
-| `launch_app` | bundleId | アプリを起動 |
-| `terminate_app` | bundleId | アプリを終了 |
-| `tap` | label, labelContains, x, y, duration | タップ |
-| `swipe` | direction, startX/Y, endX/Y, distance | スワイプ |
-| `type_text` | text, target | テキスト入力 |
-| `wait` | seconds | 待機 |
-| `wait_for_element` | label, labelContains, type, timeoutMs | 要素出現待機 |
-| `scroll_to_element` | label, labelContains, direction, distance | 要素が見えるまでスクロール |
-| `checkpoint` | name, compare, tolerance | スクリーンショット比較 |
-| `full_page_checkpoint` | name, scrollDirection, maxScrolls, stitchImages | スクロール全体のスクリーンショット比較 |
-| `smart_checkpoint` | name, tolerance | **自動判定**（スクロールViewがあればfull_page、なければcheckpoint） |
-| `open_url` | url | URL/ディープリンクを開く |
+| Action | Parameters | Description |
+|--------|------------|-------------|
+| `launch_app` | bundleId | Launch app |
+| `terminate_app` | bundleId | Terminate app |
+| `tap` | label, labelContains, x, y, duration | Tap |
+| `swipe` | direction, startX/Y, endX/Y, distance | Swipe |
+| `type_text` | text, target | Text input |
+| `wait` | seconds | Wait |
+| `wait_for_element` | label, labelContains, type, timeoutMs | Wait for element |
+| `scroll_to_element` | label, labelContains, direction, distance | Scroll until element visible |
+| `checkpoint` | name, compare, tolerance | Screenshot comparison |
+| `full_page_checkpoint` | name, scrollDirection, maxScrolls, stitchImages | Full scrollable screenshot comparison |
+| `smart_checkpoint` | name, tolerance | **Auto-detect** (full_page if scrollable, otherwise checkpoint) |
+| `open_url` | url | Open URL/deep link |
 
-### smart_checkpoint について（推奨）
+### About smart_checkpoint (Recommended)
 
-画面にスクロール可能なView（UIScrollView, UITableView, UICollectionViewなど）が含まれているかを自動検出し、適切な方法でキャプチャします:
+Automatically detects if the screen contains scrollable views (UIScrollView, UITableView, UICollectionView, etc.) and captures appropriately:
 
 ```yaml
 - action: smart_checkpoint
@@ -85,85 +87,85 @@ steps:
   tolerance: 0.01
 ```
 
-**動作:**
-1. 画面のUI要素を解析
-2. スクロールViewを検出
-3. 検出された場合 → `full_page_checkpoint`でスクロール全体をキャプチャ
-4. 検出されない場合 → 通常の`checkpoint`で現在の画面をキャプチャ
+**Behavior:**
+1. Analyze UI elements on screen
+2. Detect scrollable views
+3. If detected → Capture entire scrollable content with `full_page_checkpoint`
+4. If not detected → Capture current screen with regular `checkpoint`
 
-**遷移テストに最適:** 遷移先の画面内容を自動的に適切な方法で検証できます。
+**Ideal for navigation tests:** Automatically verifies destination screen content with the appropriate method.
 
-### full_page_checkpoint について
+### About full_page_checkpoint
 
-スクロール可能な画面全体をキャプチャして比較します:
+Captures and compares the entire scrollable screen:
 
 ```yaml
 - action: full_page_checkpoint
   name: scrollable_list
-  scrollDirection: down    # up または down（デフォルト: down）
-  maxScrolls: 10           # 最大スクロール回数（デフォルト: 10）
-  stitchImages: true       # 画像を結合するか（デフォルト: true）
-  tolerance: 0.01          # 許容誤差
+  scrollDirection: down    # up or down (default: down)
+  maxScrolls: 10           # Maximum scroll count (default: 10)
+  stitchImages: true       # Stitch images together (default: true)
+  tolerance: 0.01          # Tolerance
 ```
 
-**動作:**
-1. 画面上部まで自動スクロール（変化がなくなるまで）
-2. スクリーンショットを撮影
-3. 少しスクロールして再撮影
-4. 画面が変わらなくなるまで繰り返し（自動終端検出）
-5. `stitchImages: true` の場合、全画像を縦に結合して1枚の長い画像として比較
-6. `stitchImages: false` の場合、各セグメントを個別に比較
+**Behavior:**
+1. Auto-scroll to top of screen (until no change)
+2. Take screenshot
+3. Scroll slightly and capture again
+4. Repeat until screen stops changing (auto end detection)
+5. If `stitchImages: true`, stitch all images vertically into one long image for comparison
+6. If `stitchImages: false`, compare each segment individually
 
-**終端検出:** 連続2回同じスクリーンショットが撮れた時点でスクロール終了と判定します。maxScrollsは安全上限（デフォルト50）です。
+**End Detection:** Scrolling ends when two consecutive identical screenshots are captured. maxScrolls is a safety limit (default 50).
 
-## テストケースの作成
+## Creating Test Cases
 
-### 自然言語で作成（推奨）
+### Create with Natural Language (Recommended)
 
-Claudeに自然言語でテストケースを説明するだけで、AIが探索的にシナリオを作成します:
-
-```
-ログイン機能のテストケースを作成して。
-メールアドレスとパスワードを入力してログインし、
-ホーム画面が表示されることを確認するシナリオにして。
-```
-
-Claudeは以下を自動で行います:
-1. アプリを起動して画面を探索
-2. UI要素を確認しながらステップを構築
-3. 適切なcheckpointを設定
-4. `create_test_case`でシナリオを保存
-
-## テスト実行
-
-### Baseline作成（初回）
+Simply describe the test case to Claude in natural language, and AI will exploratively create the scenario:
 
 ```
-login-flowテストケースを実行してbaselineを更新して
+Create a test case for login functionality.
+Enter email and password to login,
+and verify that the home screen is displayed.
 ```
 
-各checkpointでスクリーンショットがbaseline画像として保存されます。
+Claude automatically:
+1. Launches app and explores the screen
+2. Builds steps while checking UI elements
+3. Sets appropriate checkpoints
+4. Saves scenario with `create_test_case`
 
-### テスト実行
+## Running Tests
 
-```
-login-flowテストケースを実行して
-```
-
-自動的にHTMLレポートが生成されます。
-
-### 全テスト実行
+### Baseline Creation (First Time)
 
 ```
-すべてのテストケースを実行して
+Run the login-flow test case and update baselines
 ```
 
-## HTMLレポート
+Screenshots are saved as baseline images at each checkpoint.
 
-テスト実行後、`results/<timestamp>/report.html`に自動生成:
+### Test Execution
 
-- **テストサマリー**: 成功/失敗数、パス率
-- **ステップ実行結果**: 各ステップの成否と所要時間
-- **スクリーンショット比較**: Actual / Baseline / Diff を横並びで表示
-- **差分ハイライト**: 差分ピクセルをマゼンタで強調
-- **自己完結型**: Base64埋め込みでHTMLファイル単体で共有可能
+```
+Run the login-flow test case
+```
+
+HTML report is automatically generated.
+
+### Run All Tests
+
+```
+Run all test cases
+```
+
+## HTML Report
+
+Auto-generated at `results/<timestamp>/report.html` after test execution:
+
+- **Test Summary**: Success/failure count, pass rate
+- **Step Execution Results**: Success/failure and duration for each step
+- **Screenshot Comparison**: Actual / Baseline / Diff displayed side by side
+- **Diff Highlighting**: Different pixels highlighted in magenta
+- **Self-contained**: Base64 embedded, shareable as a single HTML file

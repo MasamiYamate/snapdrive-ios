@@ -1,33 +1,35 @@
-# トラブルシューティング
+# Troubleshooting
+
+[English](troubleshooting.md) | [日本語](troubleshooting.ja.md)
 
 ## "No simulator UDID specified and no booted simulator found"
 
-シミュレーターが起動していません。
+The simulator is not running.
 
 ```bash
-# シミュレーターを起動
+# Boot the simulator
 xcrun simctl boot "iPhone 15"
 open -a Simulator
 ```
 
-または、Claudeに「iPhone 15シミュレーターを起動して」と指示してください。
+Or ask Claude: "Boot the iPhone 15 simulator".
 
 ## "idb describe-all failed"
 
-fb-idbがインストールされていないか、シミュレーターに接続できていません。
+fb-idb is not installed or cannot connect to the simulator.
 
 ```bash
-# fb-idbをインストール
+# Install fb-idb
 pip install fb-idb
 
-# 動作確認
+# Verify it works
 idb connect <simulator-udid>
 idb ui describe-all
 ```
 
-## ビルドエラー
+## Build Errors
 
-Xcodeのコマンドラインツールが古い可能性があります。
+Xcode command line tools may be outdated.
 
 ```bash
 sudo xcode-select --install
@@ -35,25 +37,25 @@ sudo xcode-select --install
 
 ## "Element not found"
 
-指定したラベルの要素が見つかりません。
+The specified label element cannot be found.
 
-1. `describe_ui`で現在の画面の要素一覧を確認
-2. ラベルの完全一致/部分一致を確認
-3. 要素が画面に表示されているか確認（スクロールが必要な場合も）
+1. Use `describe_ui` to check current screen elements
+2. Verify exact match vs partial match for labels
+3. Ensure element is visible on screen (may need scrolling)
 
-## スクリーンショット比較で常に差分が出る
+## Screenshot comparison always shows differences
 
-動的なコンテンツ（時刻、アニメーションなど）が含まれている可能性があります。
+Dynamic content (time, animations, etc.) may be included.
 
-- `tolerance`パラメータで許容誤差を設定
-- checkpointの前に`wait`で安定するまで待機
-- 動的な部分を避けた比較を検討
+- Set tolerance with the `tolerance` parameter
+- Use `wait` before checkpoint to let the screen stabilize
+- Consider avoiding comparison of dynamic areas
 
-## HTMLレポートが生成されない
+## HTML report not generated
 
-`updateBaselines: true`の場合、レポートは生成されません（比較ではなく保存モードのため）。
+When `updateBaselines: true`, no report is generated (save mode, not comparison mode).
 
-比較モードで実行してください:
+Run in comparison mode:
 ```
-login-flowテストケースを実行して
+Run the login-flow test case
 ```
