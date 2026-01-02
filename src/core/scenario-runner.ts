@@ -6,7 +6,6 @@ import { readFile, readdir, mkdir, unlink } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import sharp from 'sharp';
 
 import type { IIDBClient } from './idb-client.js';
 import type { ISimctlClient } from './simctl-client.js';
@@ -502,15 +501,6 @@ export class ScenarioRunner implements IScenarioRunner {
         prevScreenshotData = await this.deps.imageDiffer.toBase64(firstSegmentPath);
         scrollCount = 1;
 
-        // Get actual image dimensions to calculate scroll distance in pixels
-        const firstImageMeta = await sharp(firstSegmentPath).metadata();
-        const imageHeight = firstImageMeta.height ?? 0;
-        // Retina scale factor (screenshot pixels / logical pixels)
-        const scaleFactor = Math.round(imageHeight / DEFAULT_SCREEN_HEIGHT);
-        // Scroll distance in pixels (for overlap detection)
-        const scrollDistancePixels = scrollDistance * scaleFactor;
-        this.deps.logger.info(`full_page_checkpoint: imageHeight=${imageHeight}, scaleFactor=${scaleFactor}, scrollDistancePixels=${scrollDistancePixels}px`);
-        let prevSegmentPath = firstSegmentPath;
 
         // Scroll down → Wait → Screenshot → Correct loop until reaching bottom
         while (scrollCount < maxScrolls) {
@@ -545,16 +535,9 @@ export class ScenarioRunner implements IScenarioRunner {
             break;
           }
 
-          // Log overlap detection info (correction disabled due to oscillation issues)
-          const overlap = await imageDiffer.findOverlap(prevSegmentPath, segmentPath, scrollDistancePixels);
-          this.deps.logger.debug(
-            `full_page_checkpoint: segment ${scrollCount} - confidence=${(overlap.confidence * 100).toFixed(1)}%, offset=${overlap.offset}px`
-          );
-
           // Content is different - save this segment
           segmentPaths.push(segmentPath);
           prevScreenshotData = await this.deps.imageDiffer.toBase64(segmentPath);
-          prevSegmentPath = segmentPath;
           scrollCount++;
         }
 

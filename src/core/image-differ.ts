@@ -22,12 +22,6 @@ export interface CompareOptions {
   diffOutputPath?: string;
 }
 
-export interface OverlapResult {
-  offset: number;        // Pixel offset from expected position (positive = scrolled too much)
-  confidence: number;    // Match confidence (0-1)
-  matchPosition: number; // Y position in current image where match was found
-}
-
 export interface IImageDiffer {
   compare(
     actualPath: string,
@@ -39,12 +33,6 @@ export interface IImageDiffer {
   fromBase64(base64: string, outputPath: string): Promise<void>;
   resize(imagePath: string, scale: number, outputPath?: string): Promise<string>;
   stitchVertically(imagePaths: string[], outputPath: string): Promise<string>;
-  findOverlap(
-    prevImagePath: string,
-    currentImagePath: string,
-    expectedOverlap: number,
-    options?: { stripHeight?: number; searchRange?: number }
-  ): Promise<OverlapResult>;
 }
 
 export class ImageDiffer implements IImageDiffer {
@@ -288,123 +276,6 @@ export class ImageDiffer implements IImageDiffer {
 
     this.logger.info(`Stitched ${imagePaths.length} images into: ${outputPath}`);
     return outputPath;
-  }
-
-  /**
-   * Find overlap between previous and current screenshot to detect scroll position drift.
-   * Takes a strip from near bottom of prev image and finds where it appears in current image.
-   *
-   * Algorithm:
-   * 1. Extract a strip from bottom area of previous image (at STRIP_FROM_BOTTOM pixels from bottom)
-   * 2. After scrolling by scrollDistancePixels, this strip should appear at y = STRIP_FROM_BOTTOM - scrollDistancePixels
-   * 3. Search for the strip in current image around that expected position
-   * 4. Calculate offset = expectedPosition - actualPosition (positive = scrolled too little)
-   *
-   * @param prevImagePath - Path to previous screenshot
-   * @param currentImagePath - Path to current screenshot
-   * @param scrollDistancePixels - Expected scroll distance in pixels
-   * @param options - Search options
-   * @returns Overlap result with offset correction needed
-   */
-  async findOverlap(
-    prevImagePath: string,
-    currentImagePath: string,
-    scrollDistancePixels: number,
-    options: { stripHeight?: number; searchRange?: number } = {}
-  ): Promise<OverlapResult> {
-    const { stripHeight = 50, searchRange = 150 } = options;
-    const STRIP_FROM_BOTTOM = 200; // How far from bottom to take the strip
-
-    try {
-      // Load both images
-      const [prevBuffer, currentBuffer] = await Promise.all([
-        sharp(prevImagePath).raw().toBuffer({ resolveWithObject: true }),
-        sharp(currentImagePath).raw().toBuffer({ resolveWithObject: true }),
-      ]);
-
-      const { width, height, channels } = prevBuffer.info;
-      const currentHeight = currentBuffer.info.height;
-
-      // Take a strip from near the bottom of previous image
-      const stripStartY = height - STRIP_FROM_BOTTOM - stripHeight / 2;
-      const stripEndY = stripStartY + stripHeight;
-
-      if (stripStartY < 0 || stripEndY > height) {
-        this.logger.warn('Strip position out of bounds, skipping overlap detection');
-        return { offset: 0, confidence: 0, matchPosition: 0 };
-      }
-
-      // After scrolling, this strip should appear at this Y position in current image
-      const expectedPositionInCurrent = stripStartY - scrollDistancePixels;
-
-      if (expectedPositionInCurrent < 0 || expectedPositionInCurrent > currentHeight - stripHeight) {
-        this.logger.warn(`Expected strip position (${expectedPositionInCurrent}) out of bounds, skipping`);
-        return { offset: 0, confidence: 0, matchPosition: 0 };
-      }
-
-      // Search for this strip in current image around expected position
-      let bestMatch = { similarity: 0, position: 0 };
-      const searchStart = Math.max(0, expectedPositionInCurrent - searchRange);
-      const searchEnd = Math.min(currentHeight - stripHeight, expectedPositionInCurrent + searchRange);
-
-      for (let searchY = searchStart; searchY <= searchEnd; searchY++) {
-        let matchingPixels = 0;
-        let totalPixels = 0;
-
-        // Compare strip at this position
-        for (let y = 0; y < stripHeight; y++) {
-          const prevY = stripStartY + y;
-          const currY = searchY + y;
-
-          for (let x = 0; x < width; x++) {
-            const prevIdx = (prevY * width + x) * channels;
-            const currIdx = (currY * width + x) * channels;
-
-            // Compare RGB values (skip alpha)
-            let isMatch = true;
-            for (let c = 0; c < Math.min(channels, 3); c++) {
-              const diff = Math.abs(
-                (prevBuffer.data[prevIdx + c] ?? 0) - (currentBuffer.data[currIdx + c] ?? 0)
-              );
-              if (diff > 5) { // Allow small tolerance for anti-aliasing
-                isMatch = false;
-                break;
-              }
-            }
-
-            if (isMatch) matchingPixels++;
-            totalPixels++;
-          }
-        }
-
-        const similarity = matchingPixels / totalPixels;
-        if (similarity > bestMatch.similarity) {
-          bestMatch = { similarity, position: searchY };
-        }
-
-        // Early exit if we found a very good match
-        if (similarity > 0.98) break;
-      }
-
-      // Calculate offset: expected position - actual position
-      // Positive offset = strip is higher than expected = scrolled too little, need to scroll MORE
-      // Negative offset = strip is lower than expected = scrolled too much, need to scroll LESS
-      const offset = expectedPositionInCurrent - bestMatch.position;
-
-      this.logger.debug(
-        `Overlap: strip@${stripStartY} expected@${expectedPositionInCurrent}, found@${bestMatch.position}, ` +
-        `offset=${offset}, confidence=${(bestMatch.similarity * 100).toFixed(1)}%`
-      );
-
-      return {
-        offset: Math.round(offset),
-        confidence: bestMatch.similarity,
-        matchPosition: bestMatch.position,
-      };
-    } catch (error) {
-      this.logger.error('Failed to find overlap', { error: String(error) });
-      return { offset: 0, confidence: 0, matchPosition: 0 };
-    }
   }
 }
 
