@@ -125,15 +125,16 @@ export class ReportGenerator implements IReportGenerator {
     .container { max-width: 1400px; margin: 0 auto; }
     .report-header {
       display: flex;
-      align-items: center;
-      gap: 1rem;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
       margin-bottom: 1.5rem;
     }
     .report-logo {
-      height: 40px;
+      height: 56px;
       width: auto;
     }
-    h1 { font-size: 1.5rem; margin: 0; }
+    h1 { font-size: 1.25rem; margin: 0; color: var(--color-text-muted); }
     h2 { font-size: 1.25rem; margin-bottom: 0.75rem; }
     h3 { font-size: 1rem; margin-bottom: 0.5rem; }
     h4 { font-size: 0.875rem; margin-bottom: 0.5rem; color: var(--color-text-muted); }
