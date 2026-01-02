@@ -12,9 +12,9 @@
 
 ---
 
-# SnapDrive MCP Server
+# SnapDrive
 
-iOS Simulator自動操作用のMCPサーバー。Claude Desktop/Codeから自然言語でシミュレーターを操作できます。
+iOS Simulator用のビジュアルリグレッションテストツール。MCPを使えばClaude Desktop/Codeから自然言語でシミュレーターを操作することもできます。
 
 ## 特徴
 

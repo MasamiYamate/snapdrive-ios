@@ -12,9 +12,9 @@
 
 ---
 
-# SnapDrive MCP Server
+# SnapDrive
 
-An MCP server for iOS Simulator automation. Control the simulator with natural language from Claude Desktop/Code.
+Visual regression testing tool for iOS Simulator. You can also control the simulator with natural language from Claude Desktop/Code using MCP.
 
 ## Features
 
