@@ -25,6 +25,7 @@ export interface IElementFinder {
   ): ElementSearchResult;
   getCenterPoint(element: AccessibilityElement): Point;
   getAllLabels(elements: AccessibilityElement[]): string[];
+  findScrollRegion(elements: AccessibilityElement[]): { centerX: number; centerY: number } | null;
 }
 
 export class ElementFinder implements IElementFinder {
@@ -221,6 +222,91 @@ export class ElementFinder implements IElementFinder {
     const dx = center.x - screenCenter.x;
     const dy = center.y - screenCenter.y;
     return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /**
+   * Find the best scroll region by analyzing element frames
+   * Returns center point of the largest container that likely contains scrollable content
+   */
+  findScrollRegion(elements: AccessibilityElement[]): { centerX: number; centerY: number } | null {
+    // Default fallback
+    const defaultCenter = { centerX: 200, centerY: 400 };
+
+    if (elements.length === 0) {
+      return defaultCenter;
+    }
+
+    // Find container elements (Group, etc.) that could be scroll containers
+    const containerTypes = ['group', 'axgroup', 'scrollview', 'tableview', 'collectionview', 'list'];
+
+    const containers = elements.filter((el) => {
+      const type = el.type?.toLowerCase() ?? '';
+      const role = el.role?.toLowerCase() ?? '';
+      return containerTypes.some(t => type.includes(t) || role.includes(t));
+    });
+
+    // If we found containers, find the largest one that's not at the very top
+    // (to avoid navigation bars which are usually at y < 100)
+    let bestContainer: AccessibilityElement | null = null;
+    let maxArea = 0;
+
+    const candidateContainers = containers.length > 0 ? containers : elements;
+
+    for (const el of candidateContainers) {
+      const frame = el.frame;
+      if (!frame) continue;
+
+      // Skip elements that are likely navigation bars (at very top)
+      if (frame.y < 50 && frame.height < 100) continue;
+
+      // Skip elements that are likely tab bars (at very bottom, small height)
+      if (frame.y > 700 && frame.height < 100) continue;
+
+      // Skip very small elements
+      if (frame.width < 100 || frame.height < 100) continue;
+
+      const area = frame.width * frame.height;
+      if (area > maxArea) {
+        maxArea = area;
+        bestContainer = el;
+      }
+    }
+
+    if (bestContainer && bestContainer.frame) {
+      const frame = bestContainer.frame;
+      return {
+        centerX: Math.round(frame.x + frame.width / 2),
+        centerY: Math.round(frame.y + frame.height / 2),
+      };
+    }
+
+    // Fallback: calculate center from all element bounds
+    let minY = Infinity, maxY = 0;
+    let avgX = 0;
+    let count = 0;
+
+    for (const el of elements) {
+      if (!el.frame) continue;
+      const frame = el.frame;
+
+      // Skip likely navigation/tab bars
+      if (frame.y < 50 && frame.height < 100) continue;
+      if (frame.y > 700 && frame.height < 100) continue;
+
+      minY = Math.min(minY, frame.y);
+      maxY = Math.max(maxY, frame.y + frame.height);
+      avgX += frame.x + frame.width / 2;
+      count++;
+    }
+
+    if (count > 0) {
+      return {
+        centerX: Math.round(avgX / count),
+        centerY: Math.round((minY + maxY) / 2),
+      };
+    }
+
+    return defaultCenter;
   }
 }
 

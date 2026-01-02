@@ -21,6 +21,16 @@ export interface LaunchOptions {
   terminateExisting?: boolean;
 }
 
+export interface Waypoint {
+  latitude: number;
+  longitude: number;
+}
+
+export interface RouteOptions {
+  intervalMs?: number; // Time between waypoints in milliseconds (default: 3000)
+  loop?: boolean; // Whether to loop the route (default: false)
+}
+
 export interface ISimctlClient {
   screenshot(outputPath: string, deviceUdid?: string): Promise<string>;
   listDevices(): Promise<Simulator[]>;
@@ -31,6 +41,9 @@ export interface ISimctlClient {
   terminateApp(bundleId: string, deviceUdid?: string): Promise<void>;
   installApp(appPath: string, deviceUdid?: string): Promise<void>;
   openUrl(url: string, deviceUdid?: string): Promise<void>;
+  setLocation(latitude: number, longitude: number, deviceUdid?: string): Promise<void>;
+  clearLocation(deviceUdid?: string): Promise<void>;
+  simulateRoute(waypoints: Waypoint[], options?: RouteOptions, deviceUdid?: string): Promise<void>;
 }
 
 export class SimctlClient implements ISimctlClient {
@@ -243,6 +256,76 @@ export class SimctlClient implements ISimctlClient {
     }
 
     this.logger.debug(`Opened URL: ${url}`);
+  }
+
+  async setLocation(latitude: number, longitude: number, deviceUdid?: string): Promise<void> {
+    const device = this.getDevice(deviceUdid);
+    const result = await this.executor.execute(
+      'xcrun',
+      ['simctl', 'location', device, 'set', `${latitude},${longitude}`],
+      { timeoutMs: this.timeoutMs }
+    );
+
+    if (result.exitCode !== 0) {
+      throw new Error(`simctl location set failed: ${result.stderr}`);
+    }
+
+    this.logger.info(`Set location to: ${latitude}, ${longitude}`);
+  }
+
+  async clearLocation(deviceUdid?: string): Promise<void> {
+    const device = this.getDevice(deviceUdid);
+    const result = await this.executor.execute(
+      'xcrun',
+      ['simctl', 'location', device, 'clear'],
+      { timeoutMs: this.timeoutMs }
+    );
+
+    if (result.exitCode !== 0) {
+      throw new Error(`simctl location clear failed: ${result.stderr}`);
+    }
+
+    this.logger.info('Cleared simulated location');
+  }
+
+  async simulateRoute(
+    waypoints: Waypoint[],
+    options: RouteOptions = {},
+    deviceUdid?: string
+  ): Promise<void> {
+    if (waypoints.length === 0) {
+      throw new Error('simulateRoute requires at least one waypoint');
+    }
+
+    const intervalMs = options.intervalMs ?? 3000;
+    const loop = options.loop ?? false;
+
+    this.logger.info(`Simulating route with ${waypoints.length} waypoints, interval: ${intervalMs}ms`);
+
+    const executeRoute = async () => {
+      for (let i = 0; i < waypoints.length; i++) {
+        const wp = waypoints[i]!;
+        await this.setLocation(wp.latitude, wp.longitude, deviceUdid);
+
+        // Wait between waypoints (except after the last one)
+        if (i < waypoints.length - 1) {
+          await this.wait(intervalMs);
+        }
+      }
+    };
+
+    if (loop) {
+      // For loop mode, run once and log warning
+      // (infinite loop would block, so we just run once)
+      this.logger.warn('Loop mode: running route once (infinite loop not supported in sync mode)');
+    }
+
+    await executeRoute();
+    this.logger.info('Route simulation completed');
+  }
+
+  private wait(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private parseState(state?: string): Simulator['state'] {

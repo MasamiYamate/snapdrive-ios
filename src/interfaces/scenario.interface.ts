@@ -9,18 +9,26 @@ export type ScenarioAction =
   | 'swipe'
   | 'type_text'
   | 'wait'
-  | 'wait_for_element'
-  | 'scroll_to_element'
   | 'checkpoint'
-  | 'open_url';
+  | 'full_page_checkpoint'
+  | 'smart_checkpoint'
+  | 'scroll_to_top'
+  | 'scroll_to_bottom'
+  | 'open_url'
+  | 'set_location'
+  | 'clear_location'
+  | 'simulate_route';
+
+export interface Waypoint {
+  latitude: number;
+  longitude: number;
+}
 
 export interface ScenarioStep {
   action: ScenarioAction;
   // launch_app / terminate_app
   bundleId?: string;
-  // tap
-  label?: string;
-  labelContains?: string;
+  // tap (coordinates required)
   x?: number;
   y?: number;
   duration?: number;
@@ -33,18 +41,27 @@ export interface ScenarioStep {
   distance?: number;
   // type_text
   text?: string;
-  target?: string; // label of field to tap before typing
   // wait
   seconds?: number;
-  // wait_for_element
-  type?: string;
-  timeoutMs?: number;
   // checkpoint
   name?: string;
   compare?: boolean;
   tolerance?: number;
+  // full_page_checkpoint / scroll_to_top
+  maxScrolls?: number;
+  scrollAmount?: number; // pixels to scroll each time
+  stitchImages?: boolean; // true: stitch into one image, false: compare each segment
   // open_url
   url?: string;
+  // set_location
+  latitude?: number;
+  longitude?: number;
+  // simulate_route
+  waypoints?: Waypoint[];
+  intervalMs?: number;
+  captureAtWaypoints?: boolean; // capture screenshot at each waypoint
+  captureDelayMs?: number; // delay before capturing screenshot at each waypoint (default: 2000)
+  waypointCheckpointName?: string; // checkpoint name prefix for waypoint screenshots
 }
 
 export interface Scenario {
@@ -72,6 +89,15 @@ export interface StepResult {
   checkpoint?: CheckpointResult;
 }
 
+export interface WaypointComparisonResult {
+  index: number;
+  actualPath: string;
+  baselinePath: string;
+  diffPath?: string;
+  match: boolean;
+  differencePercent: number;
+}
+
 export interface CheckpointResult {
   name: string;
   match: boolean;
@@ -79,6 +105,12 @@ export interface CheckpointResult {
   baselinePath: string;
   actualPath: string;
   diffPath?: string;
+  // For full_page_checkpoint / smart_checkpoint with scrollable views
+  isFullPage?: boolean;
+  segmentPaths?: string[];
+  // For simulate_route with captureAtWaypoints
+  isRouteSimulation?: boolean;
+  waypointResults?: WaypointComparisonResult[];
 }
 
 export interface TestCaseResult {

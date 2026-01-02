@@ -32,6 +32,7 @@ export interface IImageDiffer {
   toBase64(imagePath: string): Promise<string>;
   fromBase64(base64: string, outputPath: string): Promise<void>;
   resize(imagePath: string, scale: number, outputPath?: string): Promise<string>;
+  stitchVertically(imagePaths: string[], outputPath: string): Promise<string>;
 }
 
 export class ImageDiffer implements IImageDiffer {
@@ -219,6 +220,62 @@ export class ImageDiffer implements IImageDiffer {
 
     this.logger.debug(`Image resized to ${newWidth}x${newHeight}: ${output}`);
     return output;
+  }
+
+  /**
+   * Stitch multiple images vertically into a single image
+   * Used for full-page screenshots of scrollable content
+   */
+  async stitchVertically(imagePaths: string[], outputPath: string): Promise<string> {
+    if (imagePaths.length === 0) {
+      throw new Error('No images to stitch');
+    }
+
+    if (imagePaths.length === 1) {
+      // Single image, just copy it
+      await copyFile(imagePaths[0]!, outputPath);
+      return outputPath;
+    }
+
+    // Get metadata for all images
+    const metadataPromises = imagePaths.map(p => sharp(p).metadata());
+    const metadataList = await Promise.all(metadataPromises);
+
+    // Use the width of the first image (assume all have same width)
+    const width = metadataList[0]?.width ?? 0;
+    const totalHeight = metadataList.reduce((sum, m) => sum + (m.height ?? 0), 0);
+
+    this.logger.debug(`Stitching ${imagePaths.length} images: ${width}x${totalHeight}`);
+
+    // Create composite operations
+    let currentY = 0;
+    const compositeOps: sharp.OverlayOptions[] = [];
+
+    for (let i = 0; i < imagePaths.length; i++) {
+      compositeOps.push({
+        input: imagePaths[i]!,
+        top: currentY,
+        left: 0,
+      });
+      currentY += metadataList[i]?.height ?? 0;
+    }
+
+    // Create stitched image
+    await mkdir(dirname(outputPath), { recursive: true });
+    await sharp({
+      create: {
+        width,
+        height: totalHeight,
+        channels: 4,
+        background: { r: 255, g: 255, b: 255, alpha: 1 },
+      },
+    })
+      .composite(compositeOps)
+      .png()
+      .toFile(outputPath);
+
+    this.logger.info(`Stitched ${imagePaths.length} images into: ${outputPath}`);
+    return outputPath;
   }
 }
 
