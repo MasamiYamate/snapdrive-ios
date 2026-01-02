@@ -17,35 +17,22 @@ Capture a screenshot (returns base64 image).
 
 ### describe_ui
 
-Get all UI elements on the screen.
+Get all UI elements on the screen via accessibility tree.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `deviceUdid` | string? | Target simulator UDID |
-
-### find_element
-
-Search for UI elements by label or type.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `label` | string? | Exact match label |
-| `labelContains` | string? | Partial match label |
-| `type` | string? | Element type |
 | `deviceUdid` | string? | Target simulator UDID |
 
 ## Action Tools
 
 ### tap
 
-Tap by coordinates or label.
+Tap at specific coordinates.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `x` | number? | X coordinate |
-| `y` | number? | Y coordinate |
-| `label` | string? | Tap target label |
-| `labelContains` | string? | Partial match label |
+| `x` | number | X coordinate |
+| `y` | number | Y coordinate |
 | `duration` | number? | Long press duration (ms) |
 | `deviceUdid` | string? | Target simulator UDID |
 
@@ -55,21 +42,20 @@ Perform swipe gesture.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `direction` | string? | Direction (up/down/left/right) |
-| `startX` | number? | Start X coordinate |
-| `startY` | number? | Start Y coordinate |
-| `endX` | number? | End X coordinate |
-| `endY` | number? | End Y coordinate |
+| `startX` | number | Start X coordinate |
+| `startY` | number | Start Y coordinate |
+| `endX` | number | End X coordinate |
+| `endY` | number | End Y coordinate |
 | `duration` | number? | Swipe duration (ms) |
 | `deviceUdid` | string? | Target simulator UDID |
 
 ### type_text
 
-Input text.
+Input text into focused text field.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `text` | string | Input text |
+| `text` | string | Text to type |
 | `deviceUdid` | string? | Target simulator UDID |
 
 ### wait
@@ -78,42 +64,7 @@ Wait for specified seconds.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `seconds` | number | Wait time in seconds |
-
-### wait_for_element
-
-Wait until an element appears.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `label` | string? | Exact match label |
-| `labelContains` | string? | Partial match label |
-| `type` | string? | Element type |
-| `timeoutMs` | number? | Timeout (ms) |
-| `deviceUdid` | string? | Target simulator UDID |
-
-## Verification Tools
-
-### compare_screenshot
-
-Compare current screen with baseline image.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `baselineName` | string | Baseline name |
-| `profile` | string? | Profile name (default: "default") |
-| `tolerance` | number? | Tolerance (%) |
-| `deviceUdid` | string? | Target simulator UDID |
-
-### update_baseline
-
-Save current screen as baseline.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `name` | string | Baseline name |
-| `profile` | string? | Profile name |
-| `deviceUdid` | string? | Target simulator UDID |
+| `seconds` | number | Wait time (0.1 to 30 seconds) |
 
 ## Simulator Management
 
@@ -121,23 +72,9 @@ Save current screen as baseline.
 
 Get list of available simulators.
 
-### boot_simulator
-
-Boot a simulator.
-
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `udid` | string? | Simulator UDID |
-| `name` | string? | Simulator name |
-
-### install_app
-
-Install a .app bundle.
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `appPath` | string | Path to .app bundle |
-| `deviceUdid` | string? | Target simulator UDID |
+| `state` | string? | Filter by state: "booted", "shutdown", or "all" (default: "all") |
 
 ### launch_app
 
@@ -146,6 +83,8 @@ Launch an app.
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `bundleId` | string | Bundle ID |
+| `args` | string[]? | Launch arguments |
+| `terminateExisting` | boolean? | Terminate existing instance (default: true) |
 | `deviceUdid` | string? | Target simulator UDID |
 
 ### terminate_app
@@ -164,9 +103,10 @@ Build, install, and launch using Xcode scheme name.
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `scheme` | string | Xcode scheme name |
-| `projectDir` | string? | Project directory |
-| `simulatorName` | string? | Simulator name |
-| `configuration` | string? | Build configuration (Debug/Release) |
+| `projectPath` | string? | Path to .xcodeproj or .xcworkspace (auto-detected if omitted) |
+| `simulatorName` | string? | Simulator name (default: "iPhone 15") |
+| `configuration` | string? | Build configuration: "Debug" or "Release" (default: "Debug") |
+| `deviceUdid` | string? | Target simulator UDID |
 
 ### open_url
 
@@ -174,7 +114,37 @@ Open a URL or deep link.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `url` | string | URL |
+| `url` | string | URL or deep link |
+| `deviceUdid` | string? | Target simulator UDID |
+
+## Location Tools
+
+### set_location
+
+Set simulated GPS location.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `latitude` | number | Latitude (-90 to 90) |
+| `longitude` | number | Longitude (-180 to 180) |
+| `deviceUdid` | string? | Target simulator UDID |
+
+### clear_location
+
+Clear simulated GPS location (revert to default).
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `deviceUdid` | string? | Target simulator UDID |
+
+### simulate_route
+
+Simulate GPS movement along a route (for navigation testing).
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `waypoints` | array | Array of {latitude, longitude} waypoints |
+| `intervalMs` | number? | Time between waypoints in ms (default: 3000) |
 | `deviceUdid` | string? | Target simulator UDID |
 
 ## Test Case Management
@@ -193,11 +163,11 @@ Run a test case and generate HTML report.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `testCaseId` | string? | Test case ID |
-| `testCasePath` | string? | Full path to test case |
+| `testCaseId` | string? | Test case ID (directory name) |
+| `testCasePath` | string? | Full path to test case directory |
 | `snapdriveDir` | string? | Path to .snapdrive directory |
-| `updateBaselines` | boolean? | Baseline update mode |
-| `generateReport` | boolean? | Generate report (default: true) |
+| `updateBaselines` | boolean? | Update baselines instead of comparing (default: false) |
+| `generateReport` | boolean? | Generate HTML report (default: true) |
 | `deviceUdid` | string? | Target simulator UDID |
 
 ### run_all_tests
@@ -207,8 +177,8 @@ Run all test cases and generate HTML report.
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `snapdriveDir` | string? | Path to .snapdrive directory |
-| `updateBaselines` | boolean? | Baseline update mode |
-| `generateReport` | boolean? | Generate report (default: true) |
+| `updateBaselines` | boolean? | Update baselines instead of comparing (default: false) |
+| `generateReport` | boolean? | Generate HTML report (default: true) |
 | `deviceUdid` | string? | Target simulator UDID |
 
 ### create_test_case
