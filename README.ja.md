@@ -77,7 +77,6 @@ pip install fb-idb
 - [テストケース](docs/test-cases.md) - 構造化テストの作成と実行
 - [CLI](docs/cli.md) - コマンドラインツールの使い方
 - [MCPツール一覧](docs/tools.md) - 利用可能なツールのリファレンス
-- [トラブルシューティング](docs/troubleshooting.md)
 
 ## ライセンス
 

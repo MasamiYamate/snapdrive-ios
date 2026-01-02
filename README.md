@@ -77,7 +77,6 @@ With environment variables:
 - [Test Cases](docs/test-cases.md) - Creating and running structured tests
 - [CLI](docs/cli.md) - Command-line tool usage
 - [MCP Tools Reference](docs/tools.md) - Available tools reference
-- [Troubleshooting](docs/troubleshooting.md)
 
 ## License
 
