@@ -8,19 +8,19 @@ Run tests without Claude. Ideal for CI/CD integration.
 
 ```bash
 # List test cases
-npx snapdrive list
+npx snapdrive-ios list
 
 # Run specific test case
-npx snapdrive run login-flow
+npx snapdrive-ios run login-flow
 
 # Run all test cases
-npx snapdrive run --all
+npx snapdrive-ios run --all
 
 # Update baselines mode
-npx snapdrive run login-flow --update-baselines
+npx snapdrive-ios run login-flow --update-baselines
 
 # Verbose output
-npx snapdrive run --all --verbose
+npx snapdrive-ios run --all --verbose
 ```
 
 ## Options
@@ -66,7 +66,7 @@ jobs:
           open -a Simulator
 
       - name: Run UI Tests
-        run: npx snapdrive run --all
+        run: npx snapdrive-ios run --all
         continue-on-error: true
 
       - name: Upload Test Report
@@ -94,6 +94,6 @@ npm run build
 npm link
 
 # Run directly
-snapdrive list
-snapdrive run login-flow
+snapdrive-ios list
+snapdrive-ios run login-flow
 ```

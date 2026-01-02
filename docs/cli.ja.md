@@ -8,19 +8,19 @@ Claudeを介さずにテストを実行できます。CI/CD統合に最適です
 
 ```bash
 # テストケース一覧
-npx snapdrive list
+npx snapdrive-ios list
 
 # 特定のテストケースを実行
-npx snapdrive run login-flow
+npx snapdrive-ios run login-flow
 
 # 全テストケースを実行
-npx snapdrive run --all
+npx snapdrive-ios run --all
 
 # ベースライン更新モード
-npx snapdrive run login-flow --update-baselines
+npx snapdrive-ios run login-flow --update-baselines
 
 # 詳細ログ出力
-npx snapdrive run --all --verbose
+npx snapdrive-ios run --all --verbose
 ```
 
 ## オプション
@@ -66,7 +66,7 @@ jobs:
           open -a Simulator
 
       - name: Run UI Tests
-        run: npx snapdrive run --all
+        run: npx snapdrive-ios run --all
         continue-on-error: true
 
       - name: Upload Test Report
@@ -94,6 +94,6 @@ npm run build
 npm link
 
 # 直接実行
-snapdrive list
-snapdrive run login-flow
+snapdrive-ios list
+snapdrive-ios run login-flow
 ```

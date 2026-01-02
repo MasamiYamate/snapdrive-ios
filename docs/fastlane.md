@@ -11,7 +11,7 @@ Integrate SnapDrive visual regression tests into your Fastlane workflow.
 Add to your project or install globally:
 
 ```bash
-npm install -g snapdrive-mcp
+npm install -g snapdrive-ios
 ```
 
 ### 2. Create a Custom Lane
@@ -39,7 +39,7 @@ lane :visual_tests do
   sh("xcrun simctl install booted '#{app_path}'")
 
   # Run SnapDrive tests
-  sh("npx snapdrive run --all --snapdrive-dir ./.snapdrive")
+  sh("npx snapdrive-ios run --all --snapdrive-dir ./.snapdrive")
 end
 
 desc "Update SnapDrive baselines"
@@ -58,7 +58,7 @@ lane :update_baselines do
   app_path = Dir["./build/Build/Products/Debug-iphonesimulator/*.app"].first
   sh("xcrun simctl install booted '#{app_path}'")
 
-  sh("npx snapdrive run --all --update-baselines --snapdrive-dir ./.snapdrive")
+  sh("npx snapdrive-ios run --all --update-baselines --snapdrive-dir ./.snapdrive")
 end
 ```
 
@@ -124,9 +124,9 @@ workflows:
                 #!/bin/bash
                 set -ex
                 pip install fb-idb
-                npm install -g snapdrive-mcp
+                npm install -g snapdrive-ios
                 xcrun simctl boot "iPhone 15" || true
-                npx snapdrive run --all
+                npx snapdrive-ios run --all
       - deploy-to-bitrise-io@2:
           inputs:
             - deploy_path: results/*/report.html
@@ -173,7 +173,7 @@ lane :parallel_visual_tests do
   test_cases = ["login-flow", "settings-view", "profile-screen"]
 
   test_cases.each do |test_case|
-    sh("npx snapdrive run #{test_case} &")
+    sh("npx snapdrive-ios run #{test_case} &")
   end
 
   # Wait for all tests to complete
@@ -191,7 +191,7 @@ lane :multi_device_tests do
 
   devices.each do |device|
     sh("xcrun simctl boot '#{device}' || true")
-    sh("npx snapdrive run --all --device $(xcrun simctl list devices | grep '#{device}' | grep -oE '[A-F0-9-]{36}')")
+    sh("npx snapdrive-ios run --all --device $(xcrun simctl list devices | grep '#{device}' | grep -oE '[A-F0-9-]{36}')")
   end
 end
 ```
