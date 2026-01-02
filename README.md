@@ -1,36 +1,50 @@
 <p align="center">
-  <img src="docs/images/header.png" alt="SnapDrive" width="100%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/header.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/header.png">
+    <img src="docs/images/header.png" alt="SnapDrive" width="800" style="max-width: 100%; height: auto;">
+  </picture>
 </p>
+
+<p align="center">
+  <strong>MCP Server for iOS Simulator Automation</strong>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> | <a href="README.ja.md">日本語</a>
+</p>
+
+---
 
 # SnapDrive MCP Server
 
-iOS Simulator自動操作用のMCPサーバー。Claude Desktop/Codeから自然言語でシミュレーターを操作できます。
+An MCP server for iOS Simulator automation. Control the simulator with natural language from Claude Desktop/Code.
 
-## 特徴
+## Features
 
-- **自然言語で操作**: 「ログインボタンをタップして」だけでOK
-- **自動ビルド&実行**: Xcodeスキーム名を指定するだけでビルド→インストール→起動
-- **スクリーンショット比較**: baseline画像との差分検出
-- **HTMLレポート**: テスト結果とスクリーンショット差分を視覚的に確認
-- **CLI対応**: CI/CD統合用のコマンドラインツール
+- **Natural Language Control**: Just say "tap the login button" and it works
+- **Auto Build & Run**: Specify Xcode scheme name to build → install → launch
+- **Screenshot Comparison**: Detect differences against baseline images
+- **HTML Reports**: Visually review test results and screenshot diffs
+- **CLI Support**: Command-line tool for CI/CD integration
 
-## 必要環境
+## Requirements
 
 - macOS + Xcode
 - Node.js 20+
 - Python 3.x + fb-idb
 
-## セットアップ
+## Setup
 
-### 1. fb-idb (Python) をインストール
+### 1. Install fb-idb (Python)
 
 ```bash
 pip install fb-idb
 ```
 
-### 2. Claude Desktop/Codeに設定
+### 2. Configure Claude Desktop/Code
 
-`.mcp.json`に追加:
+Add to `.mcp.json`:
 
 ```json
 {
@@ -43,7 +57,7 @@ pip install fb-idb
 }
 ```
 
-環境変数を設定する場合:
+With environment variables:
 
 ```json
 {
@@ -61,22 +75,22 @@ pip install fb-idb
 }
 ```
 
-### 環境変数
+### Environment Variables
 
-| 変数 | 説明 | デフォルト |
-|------|------|-----------|
-| `SNAPDRIVE_BASELINES_DIR` | baseline画像の保存先 | `./baselines` |
-| `SNAPDRIVE_RESULTS_DIR` | 結果出力先 | `./results` |
-| `SNAPDRIVE_LOG_LEVEL` | ログレベル (debug/info/warn/error) | `info` |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SNAPDRIVE_BASELINES_DIR` | Baseline images directory | `./baselines` |
+| `SNAPDRIVE_RESULTS_DIR` | Results output directory | `./results` |
+| `SNAPDRIVE_LOG_LEVEL` | Log level (debug/info/warn/error) | `info` |
 
-## ドキュメント
+## Documentation
 
-- [使い方ガイド](docs/usage.md) - 基本的な操作方法
-- [テストケース](docs/test-cases.md) - 構造化テストの作成と実行
-- [CLI](docs/cli.md) - コマンドラインツールの使い方
-- [MCPツール一覧](docs/tools.md) - 利用可能なツールのリファレンス
-- [トラブルシューティング](docs/troubleshooting.md)
+- [Usage Guide](docs/usage.md) - Basic operations
+- [Test Cases](docs/test-cases.md) - Creating and running structured tests
+- [CLI](docs/cli.md) - Command-line tool usage
+- [MCP Tools Reference](docs/tools.md) - Available tools reference
+- [Troubleshooting](docs/troubleshooting.md)
 
-## ライセンス
+## License
 
 MIT
